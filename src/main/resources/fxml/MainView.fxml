@@ -62,8 +62,9 @@
                            GridPane.rowIndex="3"
                            GridPane.columnIndex="1"/>
 
-                    <Button text="Register"
-                            fx:id="registerButton"
+                    <Button fx:id="registerButton"
+                            text="Register"
+                            onAction="#onRegister"
                             GridPane.rowIndex="4"
                             GridPane.columnIndex="1"/>
 
@@ -86,16 +87,17 @@
                                GridPane.rowIndex="0"
                                GridPane.columnIndex="1"/>
 
-                    <Button text="Call"
-                            fx:id="callButton"
-                            GridPane.rowIndex="1"
-                            GridPane.columnIndex="1"/>
+                    <Button fx:id="callButton"
+                            text="Call"
+                            onAction="#onCall"
+                            GridPane.rowIndex="0"
+                            GridPane.columnIndex="2"/>
 
                 </GridPane>
 
             </TitledPane>
 
-            <!-- Incoming -->
+            <!-- Incoming Call -->
 
             <TitledPane text="Incoming Call" collapsible="false">
 
@@ -108,11 +110,11 @@
 
                     <HBox spacing="15">
 
-                        <Button text="Answer"
-                                fx:id="answerButton"/>
+                        <Button fx:id="answerButton"
+                                text="Answer"/>
 
-                        <Button text="Reject"
-                                fx:id="rejectButton"/>
+                        <Button fx:id="rejectButton"
+                                text="Reject"/>
 
                     </HBox>
 

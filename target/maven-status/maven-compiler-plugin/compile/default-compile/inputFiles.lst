@@ -1,2 +1,8 @@
 /home/omar/Desktop/SipClient/src/main/java/com/sipclient/app/Main.java
 /home/omar/Desktop/SipClient/src/main/java/com/sipclient/controller/MainController.java
+/home/omar/Desktop/SipClient/src/main/java/com/sipclient/service/CallService.java
+/home/omar/Desktop/SipClient/src/main/java/com/sipclient/sip/config/SipConfig.java
+/home/omar/Desktop/SipClient/src/main/java/com/sipclient/sip/core/SipInitializer.java
+/home/omar/Desktop/SipClient/src/main/java/com/sipclient/sip/core/SipManager.java
+/home/omar/Desktop/SipClient/src/main/java/com/sipclient/sip/listener/SipListenerImpl.java
+/home/omar/Desktop/SipClient/src/main/java/com/sipclient/sip/state/SipState.java

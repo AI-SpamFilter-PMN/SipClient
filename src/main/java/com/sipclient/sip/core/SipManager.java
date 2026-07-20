@@ -1,6 +1,6 @@
 package com.sipclient.sip.core;
 
-import javax.sip.SipProvider;
+import com.sipclient.sip.service.RegisterService;
 
 public class SipManager {
 
@@ -14,9 +14,16 @@ public class SipManager {
 
         try {
 
-            SipProvider provider = initializer.initialize();
+            initializer.initialize();
 
-            System.out.println("Provider: " + provider);
+            RegisterService registerService =
+                    new RegisterService(
+                            initializer.getSipProvider(),
+                            initializer.getAddressFactory(),
+                            initializer.getHeaderFactory(),
+                            initializer.getMessageFactory());
+
+            registerService.register();
 
         } catch (Exception e) {
 

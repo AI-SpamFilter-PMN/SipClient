@@ -1,7 +1,16 @@
 package com.sipclient.sip.core;
 
 import java.util.Properties;
-import javax.sip.*;
+
+import javax.sip.ListeningPoint;
+import javax.sip.SipFactory;
+import javax.sip.SipProvider;
+import javax.sip.SipStack;
+
+import javax.sip.address.AddressFactory;
+import javax.sip.header.HeaderFactory;
+import javax.sip.message.MessageFactory;
+
 import com.sipclient.sip.listener.SipListenerImpl;
 
 public class SipInitializer {
@@ -11,10 +20,18 @@ public class SipInitializer {
     private ListeningPoint listeningPoint;
     private SipProvider sipProvider;
 
-    public SipProvider initialize() throws Exception {
+    private AddressFactory addressFactory;
+    private HeaderFactory headerFactory;
+    private MessageFactory messageFactory;
+
+    public void initialize() throws Exception {
 
         sipFactory = SipFactory.getInstance();
         sipFactory.setPathName("gov.nist");
+
+        addressFactory = sipFactory.createAddressFactory();
+        headerFactory = sipFactory.createHeaderFactory();
+        messageFactory = sipFactory.createMessageFactory();
 
         Properties properties = new Properties();
 
@@ -28,11 +45,27 @@ public class SipInitializer {
                 5070,
                 ListeningPoint.UDP);
 
-sipProvider = sipStack.createSipProvider(listeningPoint);
-sipProvider.addSipListener(new SipListenerImpl());
-System.out.println("✓ SIP Stack Created");
-System.out.println("✓ SIP Listener Registered");
+        sipProvider = sipStack.createSipProvider(listeningPoint);
 
+        sipProvider.addSipListener(new SipListenerImpl());
+
+        System.out.println("✓ SIP Stack Created");
+        System.out.println("✓ SIP Listener Registered");
+    }
+
+    public SipProvider getSipProvider() {
         return sipProvider;
+    }
+
+    public AddressFactory getAddressFactory() {
+        return addressFactory;
+    }
+
+    public HeaderFactory getHeaderFactory() {
+        return headerFactory;
+    }
+
+    public MessageFactory getMessageFactory() {
+        return messageFactory;
     }
 }

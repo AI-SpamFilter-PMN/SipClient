@@ -15,6 +15,8 @@ import javax.sip.address.SipURI;
 
 import javax.sip.header.CallIdHeader;
 import javax.sip.header.CSeqHeader;
+import javax.sip.header.ContactHeader;
+import javax.sip.header.ExpiresHeader;
 import javax.sip.header.FromHeader;
 import javax.sip.header.HeaderFactory;
 import javax.sip.header.MaxForwardsHeader;
@@ -98,6 +100,28 @@ public class HeaderBuilder {
     public MaxForwardsHeader buildMaxForwards() throws Exception {
 
         return headerFactory.createMaxForwardsHeader(70);
+
+    }
+
+    public ContactHeader buildContact(SipAccount account) throws Exception {
+
+        SipURI uri =
+                addressFactory.createSipURI(
+                        account.getUsername(),
+                        SipConfig.LOCAL_IP);
+
+        uri.setPort(SipConfig.LOCAL_PORT);
+
+        Address address =
+                addressFactory.createAddress(uri);
+
+        return headerFactory.createContactHeader(address);
+
+    }
+
+    public ExpiresHeader buildExpires() throws Exception {
+
+        return headerFactory.createExpiresHeader(3600);
 
     }
 

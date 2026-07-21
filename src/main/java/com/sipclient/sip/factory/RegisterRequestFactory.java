@@ -13,6 +13,8 @@ import javax.sip.address.SipURI;
 
 import javax.sip.header.CallIdHeader;
 import javax.sip.header.CSeqHeader;
+import javax.sip.header.ContactHeader;
+import javax.sip.header.ExpiresHeader;
 import javax.sip.header.FromHeader;
 import javax.sip.header.HeaderFactory;
 import javax.sip.header.MaxForwardsHeader;
@@ -20,6 +22,7 @@ import javax.sip.header.ToHeader;
 import javax.sip.header.ViaHeader;
 
 import javax.sip.message.MessageFactory;
+import javax.sip.message.Request;
 
 public class RegisterRequestFactory {
 
@@ -46,16 +49,21 @@ public class RegisterRequestFactory {
                         sipProvider,
                         headerFactory,
                         addressFactory);
-
     }
 
     public void create(SipAccount account) {
 
         try {
 
+            /*
+             * Request URI
+             */
             SipURI requestURI =
                     requestUriBuilder.build(account);
 
+            /*
+             * Headers
+             */
             List<ViaHeader> viaHeaders =
                     headerBuilder.buildViaHeaders();
 
@@ -74,22 +82,36 @@ public class RegisterRequestFactory {
             MaxForwardsHeader max =
                     headerBuilder.buildMaxForwards();
 
-            System.out.println();
-            System.out.println("========== REGISTER ==========");
-            System.out.println("Request URI : " + requestURI);
-            System.out.println();
+            ContactHeader contact =
+                    headerBuilder.buildContact(account);
 
-            System.out.println(viaHeaders.get(0));
-            System.out.println(from);
-            System.out.println(to);
-            System.out.println(callId);
-            System.out.println(cseq);
-            System.out.println(max);
+            ExpiresHeader expires =
+                    headerBuilder.buildExpires();
 
+            /*
+             * REGISTER Request
+             */
+            Request registerRequest =
+                    messageFactory.createRequest(
+                            requestURI,
+                            Request.REGISTER,
+                            callId,
+                            cseq,
+                            from,
+                            to,
+                            viaHeaders,
+                            max);
+
+            registerRequest.addHeader(contact);
+            registerRequest.addHeader(expires);
+
+            /*
+             * Print
+             */
             System.out.println();
-            System.out.println("SipProvider : " + sipProvider);
-            System.out.println("MessageFactory : " + messageFactory);
-            System.out.println("==============================");
+            System.out.println("========== REGISTER REQUEST ==========");
+            System.out.println(registerRequest);
+            System.out.println("======================================");
 
         } catch (Exception e) {
 

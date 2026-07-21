@@ -1,7 +1,7 @@
 package com.sipclient.service;
 
-import com.sipclient.sip.config.SipConfig;
 import com.sipclient.sip.core.SipManager;
+import com.sipclient.sip.model.SipAccount;
 
 public class CallService {
 
@@ -11,11 +11,12 @@ public class CallService {
         sipManager = new SipManager();
     }
 
-    public void register(SipConfig config) {
-        sipManager.initialize();
+    public void register(SipAccount account) {
+        sipManager.initialize(account);
     }
 
     public SipManager getSipManager() {
         return sipManager;
     }
+
 }

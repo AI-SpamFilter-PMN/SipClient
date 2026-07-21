@@ -1,6 +1,7 @@
 package com.sipclient.controller;
 
 import com.sipclient.sip.core.SipManager;
+import com.sipclient.sip.model.SipAccount;
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
@@ -18,31 +19,31 @@ public class MainController {
     private TextField domainField;
 
     @FXML
-    private TextField destinationField;
-
-    @FXML
     private Label statusLabel;
 
     @FXML
-    private Label incomingCallerLabel;
+    private TextField destinationField;
 
     private final SipManager sipManager = new SipManager();
 
     @FXML
-    private void onRegister() {
+    public void onRegister() {
 
-        System.out.println("Register button clicked");
+        SipAccount account = new SipAccount(
+                usernameField.getText(),
+                passwordField.getText(),
+                domainField.getText()
+        );
 
-        sipManager.initialize();
+        sipManager.initialize(account);
 
         statusLabel.setText("Initializing...");
     }
 
     @FXML
-    private void onCall() {
+    public void onCall() {
 
         System.out.println("Call button clicked");
-
         System.out.println("Destination: " + destinationField.getText());
 
     }

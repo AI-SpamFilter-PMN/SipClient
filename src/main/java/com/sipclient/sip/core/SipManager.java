@@ -1,5 +1,6 @@
 package com.sipclient.sip.core;
 
+import com.sipclient.sip.model.SipAccount;
 import com.sipclient.sip.service.RegisterService;
 
 public class SipManager {
@@ -10,7 +11,7 @@ public class SipManager {
         initializer = new SipInitializer();
     }
 
-    public void initialize() {
+    public void initialize(SipAccount account) {
 
         try {
 
@@ -23,7 +24,9 @@ public class SipManager {
                             initializer.getHeaderFactory(),
                             initializer.getMessageFactory());
 
-            registerService.register();
+            registerService.register(account);
+
+            System.out.println("SIP Initialized");
 
         } catch (Exception e) {
 

@@ -1,6 +1,7 @@
 package com.sipclient.sip.core;
 
 import java.util.Properties;
+import java.util.TooManyListenersException;
 
 import javax.sip.ListeningPoint;
 import javax.sip.SipFactory;
@@ -35,37 +36,61 @@ public class SipInitializer {
 
         Properties properties = new Properties();
 
-        properties.setProperty("javax.sip.STACK_NAME", "SipClient");
-        properties.setProperty("gov.nist.javax.sip.TRACE_LEVEL", "16");
+        properties.setProperty(
+                "javax.sip.STACK_NAME",
+                "SipClient");
+
+        properties.setProperty(
+                "gov.nist.javax.sip.TRACE_LEVEL",
+                "16");
 
         sipStack = sipFactory.createSipStack(properties);
 
-        listeningPoint = sipStack.createListeningPoint(
-                "127.0.0.1",
-                5070,
-                ListeningPoint.UDP);
+        listeningPoint =
+                sipStack.createListeningPoint(
+                        "127.0.0.1",
+                        5070,
+                        ListeningPoint.UDP);
 
-        sipProvider = sipStack.createSipProvider(listeningPoint);
-
-        sipProvider.addSipListener(new SipListenerImpl());
+        sipProvider =
+                sipStack.createSipProvider(listeningPoint);
 
         System.out.println("✓ SIP Stack Created");
+
+    }
+
+    public void registerListener(
+            SipListenerImpl listener)
+            throws TooManyListenersException {
+
+        sipProvider.addSipListener(listener);
+
         System.out.println("✓ SIP Listener Registered");
+
     }
 
     public SipProvider getSipProvider() {
+
         return sipProvider;
+
     }
 
     public AddressFactory getAddressFactory() {
+
         return addressFactory;
+
     }
 
     public HeaderFactory getHeaderFactory() {
+
         return headerFactory;
+
     }
 
     public MessageFactory getMessageFactory() {
+
         return messageFactory;
+
     }
+
 }

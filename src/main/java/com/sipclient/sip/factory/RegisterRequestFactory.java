@@ -11,6 +11,7 @@ import javax.sip.SipProvider;
 import javax.sip.address.AddressFactory;
 import javax.sip.address.SipURI;
 
+import javax.sip.header.AuthorizationHeader;
 import javax.sip.header.CallIdHeader;
 import javax.sip.header.CSeqHeader;
 import javax.sip.header.ContactHeader;
@@ -26,7 +27,6 @@ import javax.sip.message.Request;
 
 public class RegisterRequestFactory {
 
-    private final SipProvider sipProvider;
     private final MessageFactory messageFactory;
 
     private final RequestUriBuilder requestUriBuilder;
@@ -38,7 +38,6 @@ public class RegisterRequestFactory {
             HeaderFactory headerFactory,
             MessageFactory messageFactory) {
 
-        this.sipProvider = sipProvider;
         this.messageFactory = messageFactory;
 
         this.requestUriBuilder =
@@ -49,75 +48,129 @@ public class RegisterRequestFactory {
                         sipProvider,
                         headerFactory,
                         addressFactory);
+
     }
 
-    public void create(SipAccount account) {
+    /*
+     * First REGISTER
+     */
+
+    public Request create(SipAccount account) {
 
         try {
-
-            /*
-             * Request URI
-             */
-            SipURI requestURI =
-                    requestUriBuilder.build(account);
-
-            /*
-             * Headers
-             */
-            List<ViaHeader> viaHeaders =
-                    headerBuilder.buildViaHeaders();
-
-            FromHeader from =
-                    headerBuilder.buildFrom(account);
-
-            ToHeader to =
-                    headerBuilder.buildTo(account);
 
             CallIdHeader callId =
                     headerBuilder.buildCallId();
 
+            FromHeader from =
+                    headerBuilder.buildFrom(account);
+
             CSeqHeader cseq =
                     headerBuilder.buildCSeq();
 
-            MaxForwardsHeader max =
-                    headerBuilder.buildMaxForwards();
-
-            ContactHeader contact =
-                    headerBuilder.buildContact(account);
-
-            ExpiresHeader expires =
-                    headerBuilder.buildExpires();
-
-            /*
-             * REGISTER Request
-             */
-            Request registerRequest =
-                    messageFactory.createRequest(
-                            requestURI,
-                            Request.REGISTER,
-                            callId,
-                            cseq,
-                            from,
-                            to,
-                            viaHeaders,
-                            max);
-
-            registerRequest.addHeader(contact);
-            registerRequest.addHeader(expires);
-
-            /*
-             * Print
-             */
-            System.out.println();
-            System.out.println("========== REGISTER REQUEST ==========");
-            System.out.println(registerRequest);
-            System.out.println("======================================");
+            return buildRegister(
+                    account,
+                    callId,
+                    from,
+                    cseq,
+                    null);
 
         } catch (Exception e) {
 
             e.printStackTrace();
 
+            return null;
+
         }
+
+    }
+
+    /*
+     * REGISTER with Authorization
+     */
+
+    public Request createAuthenticated(
+            SipAccount account,
+            CallIdHeader callId,
+            FromHeader from,
+            long sequence,
+            AuthorizationHeader authorizationHeader) {
+
+        try {
+
+            CSeqHeader cseq =
+                    headerBuilder.buildCSeq(sequence);
+
+            return buildRegister(
+                    account,
+                    callId,
+                    from,
+                    cseq,
+                    authorizationHeader);
+
+        } catch (Exception e) {
+
+            e.printStackTrace();
+
+            return null;
+
+        }
+
+    }
+
+    /*
+     * Internal Builder
+     */
+
+    private Request buildRegister(
+            SipAccount account,
+            CallIdHeader callId,
+            FromHeader from,
+            CSeqHeader cseq,
+            AuthorizationHeader authorizationHeader)
+            throws Exception {
+
+        SipURI requestURI =
+                requestUriBuilder.build(account);
+
+        List<ViaHeader> viaHeaders =
+                headerBuilder.buildViaHeaders();
+
+        ToHeader to =
+                headerBuilder.buildTo(account);
+
+        MaxForwardsHeader max =
+                headerBuilder.buildMaxForwards();
+
+        ContactHeader contact =
+                headerBuilder.buildContact(account);
+
+        ExpiresHeader expires =
+                headerBuilder.buildExpires();
+
+        Request request =
+                messageFactory.createRequest(
+                        requestURI,
+                        Request.REGISTER,
+                        callId,
+                        cseq,
+                        from,
+                        to,
+                        viaHeaders,
+                        max);
+
+        request.addHeader(contact);
+
+        request.addHeader(expires);
+
+        if (authorizationHeader != null) {
+
+            request.addHeader(
+                    authorizationHeader);
+
+        }
+
+        return request;
 
     }
 

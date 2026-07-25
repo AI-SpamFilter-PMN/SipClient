@@ -1,6 +1,9 @@
 /home/omar/Desktop/SipClient/src/main/java/com/sipclient/app/Main.java
 /home/omar/Desktop/SipClient/src/main/java/com/sipclient/controller/MainController.java
 /home/omar/Desktop/SipClient/src/main/java/com/sipclient/service/CallService.java
+/home/omar/Desktop/SipClient/src/main/java/com/sipclient/sip/auth/AuthorizationHeaderBuilder.java
+/home/omar/Desktop/SipClient/src/main/java/com/sipclient/sip/auth/DigestCalculator.java
+/home/omar/Desktop/SipClient/src/main/java/com/sipclient/sip/auth/RegisterAuthenticator.java
 /home/omar/Desktop/SipClient/src/main/java/com/sipclient/sip/builder/HeaderBuilder.java
 /home/omar/Desktop/SipClient/src/main/java/com/sipclient/sip/builder/RegisterRequestBuilder.java
 /home/omar/Desktop/SipClient/src/main/java/com/sipclient/sip/builder/RequestUriBuilder.java
@@ -8,6 +11,7 @@
 /home/omar/Desktop/SipClient/src/main/java/com/sipclient/sip/core/SipInitializer.java
 /home/omar/Desktop/SipClient/src/main/java/com/sipclient/sip/core/SipManager.java
 /home/omar/Desktop/SipClient/src/main/java/com/sipclient/sip/factory/RegisterRequestFactory.java
+/home/omar/Desktop/SipClient/src/main/java/com/sipclient/sip/handler/SipResponseHandler.java
 /home/omar/Desktop/SipClient/src/main/java/com/sipclient/sip/listener/SipListenerImpl.java
 /home/omar/Desktop/SipClient/src/main/java/com/sipclient/sip/model/SipAccount.java
 /home/omar/Desktop/SipClient/src/main/java/com/sipclient/sip/service/RegisterService.java

@@ -13,8 +13,8 @@ import javax.sip.address.Address;
 import javax.sip.address.AddressFactory;
 import javax.sip.address.SipURI;
 
-import javax.sip.header.CallIdHeader;
 import javax.sip.header.CSeqHeader;
+import javax.sip.header.CallIdHeader;
 import javax.sip.header.ContactHeader;
 import javax.sip.header.ExpiresHeader;
 import javax.sip.header.FromHeader;
@@ -39,6 +39,9 @@ public class HeaderBuilder {
         this.addressFactory = addressFactory;
     }
 
+    /*
+     * Via
+     */
     public List<ViaHeader> buildViaHeaders() throws Exception {
 
         List<ViaHeader> headers = new ArrayList<>();
@@ -53,9 +56,30 @@ public class HeaderBuilder {
         headers.add(via);
 
         return headers;
+
     }
 
-    public FromHeader buildFrom(SipAccount account) throws Exception {
+    /*
+     * From (أول REGISTER)
+     */
+    public FromHeader buildFrom(
+            SipAccount account)
+            throws Exception {
+
+        return buildFrom(
+                account,
+                Long.toHexString(
+                        System.currentTimeMillis()));
+
+    }
+
+    /*
+     * From (Authenticated REGISTER)
+     */
+    public FromHeader buildFrom(
+            SipAccount account,
+            String tag)
+            throws Exception {
 
         SipURI uri =
                 addressFactory.createSipURI(
@@ -67,10 +91,16 @@ public class HeaderBuilder {
 
         return headerFactory.createFromHeader(
                 address,
-                Long.toHexString(System.currentTimeMillis()));
+                tag);
+
     }
 
-    public ToHeader buildTo(SipAccount account) throws Exception {
+    /*
+     * To
+     */
+    public ToHeader buildTo(
+            SipAccount account)
+            throws Exception {
 
         SipURI uri =
                 addressFactory.createSipURI(
@@ -80,48 +110,86 @@ public class HeaderBuilder {
         Address address =
                 addressFactory.createAddress(uri);
 
-        return headerFactory.createToHeader(address, null);
+        return headerFactory.createToHeader(
+                address,
+                null);
+
     }
 
+    /*
+     * Call-ID
+     * يتم إنشاؤه مرة واحدة فقط
+     */
     public CallIdHeader buildCallId() {
 
         return sipProvider.getNewCallId();
 
     }
 
-    public CSeqHeader buildCSeq() throws Exception {
+    /*
+     * CSeq = 1
+     */
+    public CSeqHeader buildCSeq()
+            throws Exception {
+
+        return buildCSeq(1L);
+
+    }
+
+    /*
+     * CSeq مخصص
+     */
+    public CSeqHeader buildCSeq(
+            long sequence)
+            throws Exception {
 
         return headerFactory.createCSeqHeader(
-                1L,
+                sequence,
                 "REGISTER");
 
     }
 
-    public MaxForwardsHeader buildMaxForwards() throws Exception {
+    /*
+     * Max-Forwards
+     */
+    public MaxForwardsHeader buildMaxForwards()
+            throws Exception {
 
         return headerFactory.createMaxForwardsHeader(70);
 
     }
 
-    public ContactHeader buildContact(SipAccount account) throws Exception {
+    /*
+     * Contact
+     */
+    public ContactHeader buildContact(
+            SipAccount account)
+            throws Exception {
 
         SipURI uri =
                 addressFactory.createSipURI(
                         account.getUsername(),
                         SipConfig.LOCAL_IP);
 
-        uri.setPort(SipConfig.LOCAL_PORT);
+        uri.setPort(
+                SipConfig.LOCAL_PORT);
 
         Address address =
                 addressFactory.createAddress(uri);
 
-        return headerFactory.createContactHeader(address);
+        return headerFactory.createContactHeader(
+                address);
 
     }
 
-    public ExpiresHeader buildExpires() throws Exception {
+    /*
+     * Expires
+     */
+    public ExpiresHeader buildExpires()
+            throws Exception {
 
-        return headerFactory.createExpiresHeader(3600);
+        return headerFactory.createExpiresHeader(
+                3600);
 
     }
 

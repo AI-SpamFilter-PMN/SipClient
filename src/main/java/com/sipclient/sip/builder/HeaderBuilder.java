@@ -22,6 +22,7 @@ import javax.sip.header.HeaderFactory;
 import javax.sip.header.MaxForwardsHeader;
 import javax.sip.header.ToHeader;
 import javax.sip.header.ViaHeader;
+import javax.sip.header.ContentTypeHeader;
 
 public class HeaderBuilder {
 
@@ -60,31 +61,48 @@ public class HeaderBuilder {
     }
 
     /*
-     * From (أول REGISTER)
+     * From (Automatic Tag)
      */
     public FromHeader buildFrom(
             SipAccount account)
             throws Exception {
 
         return buildFrom(
-                account,
+                account.getUsername(),
+                account.getDomain(),
                 Long.toHexString(
                         System.currentTimeMillis()));
 
     }
 
     /*
-     * From (Authenticated REGISTER)
+     * From (Custom Tag)
      */
     public FromHeader buildFrom(
             SipAccount account,
             String tag)
             throws Exception {
 
+        return buildFrom(
+                account.getUsername(),
+                account.getDomain(),
+                tag);
+
+    }
+
+    /*
+     * Generic From
+     */
+    public FromHeader buildFrom(
+            String username,
+            String domain,
+            String tag)
+            throws Exception {
+
         SipURI uri =
                 addressFactory.createSipURI(
-                        account.getUsername(),
-                        account.getDomain());
+                        username,
+                        domain);
 
         Address address =
                 addressFactory.createAddress(uri);
@@ -96,16 +114,30 @@ public class HeaderBuilder {
     }
 
     /*
-     * To
+     * To (Register)
      */
     public ToHeader buildTo(
             SipAccount account)
             throws Exception {
 
+        return buildTo(
+                account.getUsername(),
+                account.getDomain());
+
+    }
+
+    /*
+     * Generic To
+     */
+    public ToHeader buildTo(
+            String username,
+            String domain)
+            throws Exception {
+
         SipURI uri =
                 addressFactory.createSipURI(
-                        account.getUsername(),
-                        account.getDomain());
+                        username,
+                        domain);
 
         Address address =
                 addressFactory.createAddress(uri);
@@ -118,7 +150,6 @@ public class HeaderBuilder {
 
     /*
      * Call-ID
-     * يتم إنشاؤه مرة واحدة فقط
      */
     public CallIdHeader buildCallId() {
 
@@ -127,25 +158,28 @@ public class HeaderBuilder {
     }
 
     /*
-     * CSeq = 1
+     * REGISTER CSeq
      */
     public CSeqHeader buildCSeq()
             throws Exception {
 
-        return buildCSeq(1L);
+        return buildCSeq(
+                1L,
+                "REGISTER");
 
     }
 
     /*
-     * CSeq مخصص
+     * Generic CSeq
      */
     public CSeqHeader buildCSeq(
-            long sequence)
+            long sequence,
+            String method)
             throws Exception {
 
         return headerFactory.createCSeqHeader(
                 sequence,
-                "REGISTER");
+                method);
 
     }
 
@@ -155,7 +189,8 @@ public class HeaderBuilder {
     public MaxForwardsHeader buildMaxForwards()
             throws Exception {
 
-        return headerFactory.createMaxForwardsHeader(70);
+        return headerFactory.createMaxForwardsHeader(
+                70);
 
     }
 
@@ -192,5 +227,14 @@ public class HeaderBuilder {
                 3600);
 
     }
+
+    public ContentTypeHeader buildContentType()
+        throws Exception {
+
+    return headerFactory.createContentTypeHeader(
+            "application",
+            "sdp");
+
+}
 
 }

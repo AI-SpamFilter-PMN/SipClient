@@ -66,7 +66,9 @@ public class RegisterRequestFactory {
                     headerBuilder.buildFrom(account);
 
             CSeqHeader cseq =
-                    headerBuilder.buildCSeq();
+                    headerBuilder.buildCSeq(
+                            1L,
+                            Request.REGISTER);
 
             return buildRegister(
                     account,
@@ -99,7 +101,9 @@ public class RegisterRequestFactory {
         try {
 
             CSeqHeader cseq =
-                    headerBuilder.buildCSeq(sequence);
+                    headerBuilder.buildCSeq(
+                            sequence,
+                            Request.REGISTER);
 
             return buildRegister(
                     account,
@@ -160,13 +164,11 @@ public class RegisterRequestFactory {
                         max);
 
         request.addHeader(contact);
-
         request.addHeader(expires);
 
         if (authorizationHeader != null) {
 
-            request.addHeader(
-                    authorizationHeader);
+            request.addHeader(authorizationHeader);
 
         }
 

@@ -14,6 +14,10 @@ public class RequestUriBuilder {
         this.addressFactory = addressFactory;
     }
 
+    /*
+     * REGISTER URI
+     */
+
     public SipURI build(SipAccount account) throws Exception {
 
         SipURI uri =
@@ -25,4 +29,39 @@ public class RequestUriBuilder {
 
         return uri;
     }
+
+    /*
+     * INVITE URI
+     */
+
+    public SipURI buildInvite(
+            String callee,
+            SipAccount account) throws Exception {
+
+        SipURI uri =
+                addressFactory.createSipURI(
+                        callee,
+                        account.getDomain());
+
+        uri.setPort(SipConfig.SERVER_PORT);
+
+        return uri;
+    }
+    public SipURI build(
+        String username,
+        String domain)
+        throws Exception {
+
+    SipURI uri =
+            addressFactory.createSipURI(
+                    username,
+                    domain);
+
+    uri.setPort(
+            SipConfig.SERVER_PORT);
+
+    return uri;
+
+}
+
 }

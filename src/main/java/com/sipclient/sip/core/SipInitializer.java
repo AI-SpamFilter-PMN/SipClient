@@ -12,6 +12,7 @@ import javax.sip.address.AddressFactory;
 import javax.sip.header.HeaderFactory;
 import javax.sip.message.MessageFactory;
 
+import com.sipclient.sip.factory.InviteRequestFactory;
 import com.sipclient.sip.listener.SipListenerImpl;
 
 public class SipInitializer {
@@ -24,6 +25,8 @@ public class SipInitializer {
     private AddressFactory addressFactory;
     private HeaderFactory headerFactory;
     private MessageFactory messageFactory;
+
+    private InviteRequestFactory inviteRequestFactory;
 
     public void initialize() throws Exception {
 
@@ -55,6 +58,13 @@ public class SipInitializer {
         sipProvider =
                 sipStack.createSipProvider(listeningPoint);
 
+        inviteRequestFactory =
+                new InviteRequestFactory(
+                        sipProvider,
+                        addressFactory,
+                        headerFactory,
+                        messageFactory);
+
         System.out.println("✓ SIP Stack Created");
 
     }
@@ -70,27 +80,23 @@ public class SipInitializer {
     }
 
     public SipProvider getSipProvider() {
-
         return sipProvider;
-
     }
 
     public AddressFactory getAddressFactory() {
-
         return addressFactory;
-
     }
 
     public HeaderFactory getHeaderFactory() {
-
         return headerFactory;
-
     }
 
     public MessageFactory getMessageFactory() {
-
         return messageFactory;
+    }
 
+    public InviteRequestFactory getInviteRequestFactory() {
+        return inviteRequestFactory;
     }
 
 }

@@ -10,20 +10,28 @@ import javax.sip.SipListener;
 import javax.sip.TimeoutEvent;
 import javax.sip.TransactionTerminatedEvent;
 
+import javax.sip.header.CSeqHeader;
 import javax.sip.header.Header;
 import javax.sip.header.WWWAuthenticateHeader;
 
+import javax.sip.message.Request;
 import javax.sip.message.Response;
 
-import com.sipclient.sip.handler.SipResponseHandler;
+import com.sipclient.sip.service.InviteService;
+import com.sipclient.sip.service.RegisterService;
 
 public class SipListenerImpl implements SipListener {
 
-    private final SipResponseHandler responseHandler;
+    private final RegisterService registerService;
 
-    public SipListenerImpl(SipResponseHandler responseHandler) {
+    private final InviteService inviteService;
 
-        this.responseHandler = responseHandler;
+    public SipListenerImpl(
+            RegisterService registerService,
+            InviteService inviteService) {
+
+        this.registerService = registerService;
+        this.inviteService = inviteService;
 
     }
 
@@ -72,7 +80,8 @@ public class SipListenerImpl implements SipListener {
         System.out.println();
         System.out.println("Headers:");
 
-        Iterator<String> headers = response.getHeaderNames();
+        Iterator<String> headers =
+                response.getHeaderNames();
 
         while (headers.hasNext()) {
 
@@ -83,9 +92,24 @@ public class SipListenerImpl implements SipListener {
 
         }
 
-        if (responseHandler != null) {
+        CSeqHeader cseq =
+                (CSeqHeader) response.getHeader(
+                        CSeqHeader.NAME);
 
-            responseHandler.handleResponse(response);
+        if (cseq == null) {
+            return;
+        }
+
+        String method =
+                cseq.getMethod();
+
+        if (Request.REGISTER.equals(method)) {
+
+            registerService.handleResponse(response);
+
+        } else if (Request.INVITE.equals(method)) {
+
+            inviteService.handleResponse(response);
 
         }
 

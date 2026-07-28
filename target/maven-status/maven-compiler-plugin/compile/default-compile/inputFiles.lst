@@ -12,6 +12,10 @@
 /home/omar/Desktop/SipClient/src/main/java/com/sipclient/sip/config/SipConfig.java
 /home/omar/Desktop/SipClient/src/main/java/com/sipclient/sip/core/SipInitializer.java
 /home/omar/Desktop/SipClient/src/main/java/com/sipclient/sip/core/SipManager.java
+/home/omar/Desktop/SipClient/src/main/java/com/sipclient/sip/dialog/CallSession.java
+/home/omar/Desktop/SipClient/src/main/java/com/sipclient/sip/dialog/CallState.java
+/home/omar/Desktop/SipClient/src/main/java/com/sipclient/sip/dialog/DialogManager.java
+/home/omar/Desktop/SipClient/src/main/java/com/sipclient/sip/factory/ByeRequestFactory.java
 /home/omar/Desktop/SipClient/src/main/java/com/sipclient/sip/factory/InviteRequestFactory.java
 /home/omar/Desktop/SipClient/src/main/java/com/sipclient/sip/factory/RegisterRequestFactory.java
 /home/omar/Desktop/SipClient/src/main/java/com/sipclient/sip/handler/SipResponseHandler.java

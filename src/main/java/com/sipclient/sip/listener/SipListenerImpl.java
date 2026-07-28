@@ -16,37 +16,65 @@ import javax.sip.header.WWWAuthenticateHeader;
 
 import javax.sip.message.Request;
 import javax.sip.message.Response;
+import javax.sip.ResponseEvent;
 
 import com.sipclient.sip.service.InviteService;
 import com.sipclient.sip.service.RegisterService;
+import com.sipclient.sip.dialog.DialogManager;
+import com.sipclient.sip.dialog.CallState;
+import javax.sip.Dialog;
 
 public class SipListenerImpl implements SipListener {
 
     private final RegisterService registerService;
 
     private final InviteService inviteService;
+    private final DialogManager dialogManager;
 
     public SipListenerImpl(
-            RegisterService registerService,
-            InviteService inviteService) {
+        RegisterService registerService,
+        InviteService inviteService,
+        DialogManager dialogManager) {
 
-        this.registerService = registerService;
-        this.inviteService = inviteService;
+    this.registerService = registerService;
+    this.inviteService = inviteService;
+    this.dialogManager = dialogManager;
 
-    }
+}
 
     @Override
-    public void processRequest(RequestEvent requestEvent) {
+public void processRequest(RequestEvent requestEvent) {
 
-        System.out.println("Received Request: "
-                + requestEvent.getRequest().getMethod());
+    Request request = requestEvent.getRequest();
+
+    System.out.println("Received Request: "
+            + request.getMethod());
+
+    if (Request.BYE.equals(request.getMethod())) {
+
+        dialogManager.setState(CallState.DISCONNECTED);
+
+        dialogManager.reset();
 
     }
+
+}
 
     @Override
     public void processResponse(ResponseEvent responseEvent) {
 
         Response response = responseEvent.getResponse();
+        if (responseEvent.getDialog() != null) {
+
+    dialogManager.getCurrentSession()
+            .setDialog(responseEvent.getDialog());
+
+}
+if (responseEvent.getDialog() != null) {
+
+    System.out.println("Dialog Stored Successfully");
+
+}
 
         System.out.println();
         System.out.println("========== SIP RESPONSE ==========");
@@ -105,13 +133,43 @@ public class SipListenerImpl implements SipListener {
 
         if (Request.REGISTER.equals(method)) {
 
-            registerService.handleResponse(response);
+    registerService.handleResponse(response);
 
-        } else if (Request.INVITE.equals(method)) {
+}
+else if (Request.INVITE.equals(method)) {
 
-            inviteService.handleResponse(response);
+    switch (response.getStatusCode()) {
 
-        }
+        case Response.TRYING:
+            dialogManager.setState(CallState.CALLING);
+            break;
+
+        case Response.RINGING:
+            dialogManager.setState(CallState.RINGING);
+            break;
+
+
+
+        default:
+            break;
+    }
+
+    inviteService.handleResponse(response);
+
+}
+else if (Request.BYE.equals(method)) {
+
+    if (response.getStatusCode() == Response.OK) {
+
+        System.out.println();
+        System.out.println("BYE Completed");
+
+        dialogManager.setState(CallState.DISCONNECTED);
+dialogManager.reset();
+
+    }
+
+}
 
     }
 

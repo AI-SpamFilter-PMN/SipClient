@@ -18,6 +18,13 @@ import javax.sip.header.WWWAuthenticateHeader;
 import javax.sip.message.MessageFactory;
 import javax.sip.message.Request;
 import javax.sip.message.Response;
+import com.sipclient.sip.dialog.DialogManager;
+import com.sipclient.sip.dialog.CallState;
+import javax.sip.Dialog;
+import com.sipclient.sip.factory.ByeRequestFactory;
+import javax.sip.Dialog;
+import javax.sip.ClientTransaction;
+import javax.sip.message.Request;
 
 public class InviteService implements SipResponseHandler {
 
@@ -38,27 +45,33 @@ public class InviteService implements SipResponseHandler {
     private long currentCSeq = 1;
 
     private boolean authenticationAttempted = false;
+    private final DialogManager dialogManager;
+    private final ByeRequestFactory byeRequestFactory;
 
-    public InviteService(
-            SipProvider sipProvider,
-            AddressFactory addressFactory,
-            HeaderFactory headerFactory,
-            MessageFactory messageFactory,
-            InviteRequestFactory inviteRequestFactory) {
+ public InviteService(
+        SipProvider sipProvider,
+        AddressFactory addressFactory,
+        HeaderFactory headerFactory,
+        MessageFactory messageFactory,
+        InviteRequestFactory inviteRequestFactory,
+        DialogManager dialogManager) {
 
-        this.sipProvider = sipProvider;
+    this.sipProvider = sipProvider;
 
-        this.inviteRequestFactory = inviteRequestFactory;
+    this.inviteRequestFactory = inviteRequestFactory;
 
-        this.authenticator =
-                new InviteAuthenticator(
-                        sipProvider,
-                        inviteRequestFactory,
-                        headerFactory,
-                        addressFactory);
+    this.dialogManager = dialogManager;
+    this.byeRequestFactory =
+        new ByeRequestFactory(sipProvider);
 
-    }
+    this.authenticator =
+            new InviteAuthenticator(
+                    sipProvider,
+                    inviteRequestFactory,
+                    headerFactory,
+                    addressFactory);
 
+}
     public void call(
             SipAccount account,
             String destination) {
@@ -94,10 +107,18 @@ public class InviteService implements SipResponseHandler {
             System.out.println("============================");
 
             ClientTransaction transaction =
-                    sipProvider.getNewClientTransaction(
-                            invite);
+        sipProvider.getNewClientTransaction(
+                invite);
 
-            transaction.sendRequest();
+dialogManager.getCurrentSession()
+        .setClientTransaction(transaction);
+
+dialogManager.getCurrentSession()
+        .setRemoteUser(destination);
+
+dialogManager.setState(CallState.CALLING);
+
+transaction.sendRequest();
 
             System.out.println();
             System.out.println("INVITE Sent Successfully");
@@ -155,13 +176,48 @@ public class InviteService implements SipResponseHandler {
                 System.out.println("Ringing...");
 
                 break;
+case Response.OK:
 
-            case Response.OK:
+    if (dialogManager.getState() == CallState.TERMINATING) {
 
-                System.out.println();
-                System.out.println("Call Connected");
+        dialogManager.reset();
+        System.out.println("Call Finished");
+        break;
+    }
 
-                break;
+    Dialog dialog = dialogManager
+            .getCurrentSession()
+            .getDialog();
+
+    if (dialog != null
+            && dialogManager.getState() != CallState.IN_CALL) {
+
+        try {
+
+            javax.sip.header.CSeqHeader cseq =
+        (javax.sip.header.CSeqHeader)
+                response.getHeader(javax.sip.header.CSeqHeader.NAME);
+
+Request ack = dialog.createAck(cseq.getSeqNumber());
+
+dialog.sendAck(ack);
+
+
+
+            System.out.println("ACK Sent");
+
+        } catch (Exception e) {
+
+            e.printStackTrace();
+
+        }
+
+        dialogManager.setState(CallState.IN_CALL);
+
+        System.out.println("Call Connected");
+    }
+
+    break;
 
             default:
 
@@ -170,5 +226,45 @@ public class InviteService implements SipResponseHandler {
         }
 
     }
+
+public void hangup() {
+
+
+    try {
+
+        Dialog dialog =
+                dialogManager
+                        .getCurrentSession()
+                        .getDialog();
+
+        if (dialog == null) {
+
+            System.out.println("No active dialog.");
+
+            return;
+
+        }
+
+        ClientTransaction transaction =
+                byeRequestFactory.create(dialog);
+
+        dialog.sendRequest(transaction);
+
+        dialogManager.setState(CallState.TERMINATING);
+
+        System.out.println();
+        System.out.println("========== BYE ==========");
+        System.out.println(transaction.getRequest());
+        System.out.println("=========================");
+        System.out.println("BYE Sent Successfully");
+
+    } catch (Exception e) {
+
+        e.printStackTrace();
+
+    }
+
+}
+
 
 }

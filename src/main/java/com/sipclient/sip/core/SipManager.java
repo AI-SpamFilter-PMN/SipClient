@@ -1,5 +1,7 @@
 package com.sipclient.sip.core;
 
+import com.sipclient.sip.dialog.CallState;
+import com.sipclient.sip.dialog.DialogManager;
 import com.sipclient.sip.listener.SipListenerImpl;
 import com.sipclient.sip.model.SipAccount;
 import com.sipclient.sip.service.InviteService;
@@ -11,15 +13,30 @@ public class SipManager {
 
     private InviteService inviteService;
 
+    private final DialogManager dialogManager;
+
     public SipManager() {
 
         initializer = new SipInitializer();
+        dialogManager = new DialogManager();
 
     }
 
     public InviteService getInviteService() {
 
         return inviteService;
+
+    }
+
+    public DialogManager getDialogManager() {
+
+        return dialogManager;
+
+    }
+
+    public CallState getCallState() {
+
+        return dialogManager.getState();
 
     }
 
@@ -42,22 +59,18 @@ public class SipManager {
                             initializer.getAddressFactory(),
                             initializer.getHeaderFactory(),
                             initializer.getMessageFactory(),
-                            initializer.getInviteRequestFactory());
+                            initializer.getInviteRequestFactory(),
+                            dialogManager);
 
             SipListenerImpl listener =
-        new SipListenerImpl(
-                registerService,
-                inviteService);
+                    new SipListenerImpl(
+                            registerService,
+                            inviteService,
+                            dialogManager);
 
             initializer.registerListener(listener);
 
             registerService.register(account);
-
-            Thread.sleep(2000);
-
-            call(
-                    account,
-                    "1002");
 
             System.out.println("SIP Initialized");
 

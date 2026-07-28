@@ -87,12 +87,19 @@
                                GridPane.rowIndex="0"
                                GridPane.columnIndex="1"/>
 
-                    <Button fx:id="callButton"
-                            text="Call"
-                            onAction="#onCall"
-                            GridPane.rowIndex="0"
-                            GridPane.columnIndex="2"/>
+                    <HBox spacing="10"
+      GridPane.rowIndex="0"
+      GridPane.columnIndex="2">
 
+    <Button fx:id="callButton"
+            text="Call"
+            onAction="#onCall"/>
+
+    <Button fx:id="hangupButton"
+            text="Hang Up"
+            onAction="#onHangup"/>
+
+</HBox>
                 </GridPane>
 
             </TitledPane>

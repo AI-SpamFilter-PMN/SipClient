@@ -59,6 +59,14 @@ public class SipListenerImpl implements SipListener {
         System.out.println("ServerTx    : " + requestEvent.getServerTransaction());
         System.out.println("==========================================");
 
+        if (Request.INVITE.equals(request.getMethod())) {
+            byte[] rawContent = request.getRawContent();
+            if (rawContent != null && rawContent.length > 0) {
+                String sdpBody = new String(rawContent);
+                dialogManager.handleIncomingSdp(sdpBody);
+            }
+        }
+
         requestDispatcher.dispatch(requestEvent);
     }
 
@@ -130,11 +138,9 @@ public class SipListenerImpl implements SipListener {
                     break;
 
                 case Response.OK:
-                    dialogManager.setState(CallState.IN_CALL);
                     break;
 
                 default:
-                   
                     if (statusCode >= 400) {
                         dialogManager.setState(CallState.DISCONNECTED);
                         dialogManager.reset();
@@ -169,16 +175,23 @@ public class SipListenerImpl implements SipListener {
         dialogManager.setState(CallState.DISCONNECTED);
         dialogManager.reset();
     }
-
-    @Override
+@Override
     public void processTransactionTerminated(TransactionTerminatedEvent transactionTerminatedEvent) {
-        System.out.println("Transaction Terminated");
+
+        System.out.println("Transaction Terminated (Ignored to keep call active)");
     }
 
     @Override
     public void processDialogTerminated(DialogTerminatedEvent dialogTerminatedEvent) {
-        System.out.println("Dialog Terminated");
-        dialogManager.setState(CallState.DISCONNECTED);
-        dialogManager.reset();
+        System.out.println("Dialog Terminated Event Received");
+
+        if (dialogManager.getState() == CallState.TERMINATING || dialogManager.getState() == CallState.DISCONNECTED) {
+            dialogManager.setState(CallState.DISCONNECTED);
+            dialogManager.reset();
+        } else {
+            System.out.println("Dialog Terminated ignored because call is still active in state: " + dialogManager.getState());
+        }
+        
     }
+    
 }

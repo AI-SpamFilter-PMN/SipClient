@@ -1,5 +1,6 @@
 package com.sipclient.sip.handler;
 
+import javax.sip.Dialog;
 import javax.sip.RequestEvent;
 import javax.sip.message.Request;
 
@@ -24,23 +25,42 @@ public class AckRequestHandler {
         System.out.println("Call-ID: " + request.getHeader("Call-ID"));
         System.out.println("CSeq   : " + request.getHeader("CSeq"));
 
-        IncomingCallSession session =
-                dialogManager.getIncomingCallSession();
+        IncomingCallSession incomingSession = dialogManager.getIncomingCallSession();
+        var currentSession = dialogManager.getCurrentSession();
+        Dialog eventDialog = event.getDialog();
 
-        if (session != null) {
+        // 1. حالة المكالمات الواردة (Incoming Call)
+        if (incomingSession != null) {
 
-            if (event.getDialog() != null) {
-                session.setDialog(event.getDialog());
+            if (eventDialog != null) {
+                incomingSession.setDialog(eventDialog);
             }
 
             dialogManager.setState(CallState.IN_CALL);
+            System.out.println("Incoming Call ACK Processed -> IN_CALL");
 
-            System.out.println("Incoming Call -> IN_CALL");
+        } 
+        // 2. حالة المكالمات الصادرة / Re-INVITE ACK (Outgoing Call)
+        else if (currentSession != null) {
 
-        } else {
+            if (eventDialog != null) {
+                currentSession.setDialog(eventDialog);
+            }
 
-            System.out.println(
-                    "Warning: No IncomingCallSession found");
+            dialogManager.setState(CallState.IN_CALL);
+            System.out.println("Re-INVITE ACK Processed for Outgoing Call -> IN_CALL");
+
+        } 
+        // 3. حالة وجود Dialog قائم بدون Session صريحة
+        else if (eventDialog != null) {
+
+            dialogManager.setState(CallState.IN_CALL);
+            System.out.println("ACK Processed for Active Dialog -> IN_CALL");
+
+        } 
+        else {
+
+            System.out.println("Warning: No active session or dialog found for this ACK");
 
         }
 

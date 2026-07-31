@@ -42,7 +42,6 @@ public class InviteService implements SipResponseHandler {
     private long currentCSeq = 1;
     private boolean authenticationAttempted = false;
 
-   
     private Clip ringtoneClip;
 
     public InviteService(
@@ -158,12 +157,15 @@ public class InviteService implements SipResponseHandler {
                     break;
                 }
 
+                if (dialogManager.getState() == CallState.IN_CALL) {
+                    break;
+                }
+
                 Dialog dialog = dialogManager
                         .getCurrentSession()
                         .getDialog();
 
-                if (dialog != null && dialogManager.getState() != CallState.IN_CALL) {
-
+                if (dialog != null) {
                     try {
                         javax.sip.header.CSeqHeader cseq =
                                 (javax.sip.header.CSeqHeader) response.getHeader(javax.sip.header.CSeqHeader.NAME);
@@ -171,14 +173,21 @@ public class InviteService implements SipResponseHandler {
                         Request ack = dialog.createAck(cseq.getSeqNumber());
                         dialog.sendAck(ack);
 
-                        System.out.println("ACK Sent");
+                        System.out.println("========== ACK SENT ==========");
+
+                        byte[] rawContent = response.getRawContent();
+                        if (rawContent != null && rawContent.length > 0) {
+                            String sdpBody = new String(rawContent);
+                            dialogManager.handleIncomingSdp(sdpBody);
+                        }
+
+                        dialogManager.setState(CallState.IN_CALL);
+                        System.out.println("Call Connected Successfully");
 
                     } catch (Exception e) {
+                        System.err.println("Failed to process 200 OK / ACK: " + e.getMessage());
                         e.printStackTrace();
                     }
-
-                    dialogManager.setState(CallState.IN_CALL);
-                    System.out.println("Call Connected");
                 }
 
                 break;
@@ -237,10 +246,6 @@ public class InviteService implements SipResponseHandler {
             e.printStackTrace();
         }
     }
-
-    // =======================================================
-    // 🎧 إدارة تشغيل وإيقاف الصوت من الـ Resources
-    // =======================================================
 
     private synchronized void startRingtone() {
         try {

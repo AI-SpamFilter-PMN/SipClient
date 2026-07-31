@@ -20,6 +20,7 @@ import javax.sip.message.Response;
 import com.sipclient.sip.dialog.CallState;
 import com.sipclient.sip.dialog.DialogManager;
 import com.sipclient.sip.model.IncomingCallSession;
+import javax.sip.header.ToHeader;
 
 public class IncomingCallService {
 
@@ -124,79 +125,76 @@ public class IncomingCallService {
         System.out.println("180 Ringing Sent");
     }
 
-    public void onIncomingInvite(RequestEvent event) {
+  public void onIncomingInvite(RequestEvent event) {
+    try {
+        Request request = event.getRequest();
 
-        try {
+        ToHeader toHeader = (ToHeader) request.getHeader(ToHeader.NAME);
+        boolean isReInvite = (toHeader != null && toHeader.getTag() != null && !toHeader.getTag().isEmpty())
+                || dialogManager.getState() == CallState.IN_CALL;
 
-            Request request =
-                    event.getRequest();
-
-            System.out.println("================================");
-            System.out.println("Incoming INVITE");
-            System.out.println(
-                    "Method : " + request.getMethod());
-            System.out.println(
-                    "Call-ID: " + request.getHeader("Call-ID"));
-            System.out.println(
-                    "CSeq   : " + request.getHeader("CSeq"));
-
-            ServerTransaction serverTransaction =
-                    getOrCreateServerTransaction(
-                            event,
-                            request);
-
-            sendTrying(
-                    serverTransaction,
-                    request);
-
-            sendRinging(
-                    serverTransaction,
-                    request);
-
-            /*
-             * IMPORTANT:
-             *
-             * We DO NOT send 200 OK here.
-             *
-             * The call is now waiting for a decision
-             * from the UI:
-             *
-             * Accept -> send 200 OK
-             * Reject -> send 486 Busy Here
-             * CANCEL  -> handle CANCEL
-             */
-
-            dialogManager.setState(CallState.RINGING);
-
-            IncomingCallSession session =
-                    dialogManager.getIncomingCallSession();
-
-            if (session != null) {
-
-                System.out.println(
-                        "Incoming Call -> RINGING");
-
-                System.out.println(
-                        "Caller -> "
-                        + session.getCallerNumber());
-
-                System.out.println(
-                        "Call-ID -> "
-                        + session.getCallId());
+        if (isReInvite) {
+            System.out.println("====== Re-INVITE Received ======");
+            ServerTransaction st = event.getServerTransaction();
+            if (st == null) {
+                st = sipProvider.getNewServerTransaction(request);
             }
 
-            System.out.println(
-                    "Waiting for Accept / Reject");
+            Response ok = messageFactory.createResponse(Response.OK, request);
+            
+            SipURI contactURI = addressFactory.createSipURI("1001", "127.0.0.1");
+            contactURI.setPort(5070);
+            Address contactAddress = addressFactory.createAddress(contactURI);
+            ContactHeader contactHeader = headerFactory.createContactHeader(contactAddress);
+            ok.addHeader(contactHeader);
 
+            
+            if (request.getContent() != null) {
+                ok.setContent(request.getContent(), headerFactory.createContentTypeHeader("application", "sdp"));
+            }
+
+            st.sendResponse(ok);
+            System.out.println("200 OK sent for Re-INVITE");
             System.out.println("================================");
-
-        } catch (Exception e) {
-
-            e.printStackTrace();
+            return;
         }
-    }
 
-    public void acceptIncomingCall() {
+        System.out.println("Request-URI : " + request.getRequestURI());
+        System.out.println("From        : " + request.getHeader("From"));
+        System.out.println("To          : " + request.getHeader("To"));
+        System.out.println("Contact     : " + request.getHeader("Contact"));
+        System.out.println("Via         : " + request.getHeader("Via"));
+
+        System.out.println("================================");
+        System.out.println("Incoming INVITE");
+        System.out.println("Method : " + request.getMethod());
+        System.out.println("Call-ID: " + request.getHeader("Call-ID"));
+        System.out.println("CSeq   : " + request.getHeader("CSeq"));
+
+        ServerTransaction serverTransaction = getOrCreateServerTransaction(event, request);
+
+        sendTrying(serverTransaction, request);
+        sendRinging(serverTransaction, request);
+
+        dialogManager.setState(CallState.RINGING);
+
+        IncomingCallSession session = dialogManager.getIncomingCallSession();
+
+        if (session != null) {
+            System.out.println("Incoming Call -> RINGING");
+            System.out.println("Caller -> " + session.getCallerNumber());
+            System.out.println("Call-ID -> " + session.getCallId());
+        }
+
+        System.out.println("Waiting for Accept / Reject");
+        System.out.println("================================");
+
+    } catch (Exception e) {
+        e.printStackTrace();
+    }
+}
+
+   public void acceptIncomingCall() {
 
         try {
 
@@ -204,10 +202,7 @@ public class IncomingCallService {
                     dialogManager.getIncomingCallSession();
 
             if (session == null) {
-
-                System.out.println(
-                        "No incoming call to accept.");
-
+                System.out.println("No incoming call to accept.");
                 return;
             }
 
@@ -218,10 +213,7 @@ public class IncomingCallService {
                     session.getInviteRequest();
 
             if (serverTransaction == null || request == null) {
-
-                System.out.println(
-                        "Invalid incoming call session.");
-
+                System.out.println("Invalid incoming call session.");
                 return;
             }
 
@@ -247,13 +239,19 @@ public class IncomingCallService {
 
             ok.addHeader(contactHeader);
 
+            if (request.getContent() != null) {
+                ok.setContent(
+                        request.getContent(),
+                        headerFactory.createContentTypeHeader("application", "sdp"));
+            }
+
             serverTransaction.sendResponse(ok);
 
-            System.out.println(
-                    "200 OK Sent - Incoming Call Accepted");
+            dialogManager.setState(CallState.IN_CALL);
+
+            System.out.println("200 OK Sent - Incoming Call Accepted");
 
         } catch (Exception e) {
-
             e.printStackTrace();
         }
     }

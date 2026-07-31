@@ -12,7 +12,6 @@ import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
 import javafx.util.Duration;
-import javafx.application.Platform;
 import javafx.scene.media.AudioClip;
 import java.net.URL;
 
@@ -23,8 +22,8 @@ public class MainController {
     private final SipManager sipManager = new SipManager();
 
     private Timeline timer;
-private AudioClip ringtone;
-private boolean ringtonePlaying = false;
+    private AudioClip ringtone;
+    private boolean ringtonePlaying = false;
 
     @FXML
     private TextField usernameField;
@@ -46,14 +45,15 @@ private boolean ringtonePlaying = false;
 
     @FXML
     private Button hangupButton;
+
     @FXML
-private Label incomingCallerLabel;
+    private Label incomingCallerLabel;
 
-@FXML
-private Button answerButton;
+    @FXML
+    private Button answerButton;
 
-@FXML
-private Button rejectButton;
+    @FXML
+    private Button rejectButton;
 
     @FXML
     public void onRegister() {
@@ -66,6 +66,10 @@ private Button rejectButton;
         sipManager.initialize(account);
 
         statusLabel.setText("Initializing...");
+
+        if (timer != null) {
+            timer.stop();
+        }
 
         timer = new Timeline(
                 new KeyFrame(
@@ -80,47 +84,37 @@ private Button rejectButton;
     public void onCall() {
 
         if (account == null) {
-
             System.out.println("Please register first.");
             return;
-
         }
 
         String destination = destinationField.getText().trim();
 
         if (destination.isEmpty()) {
-
             System.out.println("Destination is empty.");
             return;
-
         }
 
         System.out.println("Calling " + destination);
-
         sipManager.call(account, destination);
-
     }
 
     @FXML
     public void onHangup() {
 
         if (sipManager.getInviteService() == null) {
-
             return;
-
         }
 
         CallState state = sipManager.getCallState();
+        System.out.println("Current State = " + state);
 
-System.out.println("Current State = " + state);
+        if (state != CallState.IN_CALL) {
+            System.out.println("Cannot hangup. Not in active call.");
+            return;
+        }
 
-if (state != CallState.IN_CALL) {
-    System.out.println("Cannot hangup. Not in active call.");
-    return;
-}
-
-sipManager.getInviteService().hangup();
-
+        sipManager.getInviteService().hangup();
     }
 
     private void updateCallStatus() {
@@ -131,6 +125,7 @@ sipManager.getInviteService().hangup();
 
             case IDLE:
                 statusLabel.setText("Idle");
+                stopRingtone();
                 break;
 
             case REGISTERING:
@@ -145,40 +140,29 @@ sipManager.getInviteService().hangup();
                 statusLabel.setText("Calling...");
                 break;
 
-           case RINGING:
+            case RINGING:
+                statusLabel.setText("Incoming Call / Ringing");
+                updateIncomingCallUI();
+                startRingtone();
+                break;
 
-    statusLabel.setText("Incoming Call");
-
-    updateIncomingCallUI();
-
-    startRingtone();
-
-    break;
             case IN_CALL:
-
-    stopRingtone();
-
-    statusLabel.setText("In Call");
-
-    answerButton.setDisable(true);
-    rejectButton.setDisable(true);
-
-    break;
+                stopRingtone();
+                statusLabel.setText("In Call");
+                answerButton.setDisable(true);
+                rejectButton.setDisable(true);
+                break;
 
             case DISCONNECTED:
-
-    stopRingtone();
-
-    statusLabel.setText("Disconnected");
-
-    answerButton.setDisable(true);
-    rejectButton.setDisable(true);
-
-    incomingCallerLabel.setText("---------");
-
-    break;
+                stopRingtone(); 
+                statusLabel.setText("Disconnected");
+                answerButton.setDisable(true);
+                rejectButton.setDisable(true);
+                incomingCallerLabel.setText("---------");
+                break;
 
             default:
+                stopRingtone();
                 statusLabel.setText(state.toString());
                 break;
         }
@@ -186,117 +170,107 @@ sipManager.getInviteService().hangup();
 
     private void updateIncomingCallUI() {
 
-    var session =
-            sipManager.getDialogManager()
-                    .getIncomingCallSession();
+        var session = sipManager.getDialogManager().getIncomingCallSession();
 
-    if (session == null) {
-        return;
-    }
-
-    String caller = session.getCallerNumber();
-
-    if (caller == null || caller.isEmpty()) {
-        caller = "Unknown";
-    }
-
-    incomingCallerLabel.setText(caller);
-
-    answerButton.setDisable(false);
-    rejectButton.setDisable(false);
-}
-   @FXML
-public void onAnswer() {
-
-    if (sipManager.getIncomingCallService() == null) {
-        return;
-    }
-
-    if (sipManager.getCallState() != CallState.RINGING) {
-        return;
-    }
-
-    stopRingtone();
-
-    sipManager.getIncomingCallService()
-            .acceptIncomingCall();
-
-    answerButton.setDisable(true);
-    rejectButton.setDisable(true);
-
-    incomingCallerLabel.setText("---------");
-}
-
-@FXML
-public void onReject() {
-
-    if (sipManager.getIncomingCallService() == null) {
-        return;
-    }
-
-    if (sipManager.getCallState() != CallState.RINGING) {
-        return;
-    }
-
-    stopRingtone();
-
-    sipManager.getIncomingCallService()
-            .rejectIncomingCall();
-
-    answerButton.setDisable(true);
-    rejectButton.setDisable(true);
-
-    incomingCallerLabel.setText("---------");
-}
-private void startRingtone() {
-
-    if (ringtonePlaying) {
-        return;
-    }
-
-    try {
-
-        if (ringtone == null) {
-
-            URL resource = getClass()
-                    .getResource("/sounds/ringtone.wav");
-
-            if (resource == null) {
-                System.err.println("Ringtone resource not found!");
-                return;
-            }
-
-            System.out.println("Ringtone path: " + resource);
-
-            ringtone = new AudioClip(resource.toExternalForm());
-
-            ringtone.setVolume(1.0);
-            ringtone.setCycleCount(AudioClip.INDEFINITE);
+        if (session == null) {
+            return;
         }
 
-        ringtonePlaying = true;
-        ringtone.play();
+        String caller = session.getCallerNumber();
 
-        System.out.println("Ringtone started");
+        if (caller == null || caller.isEmpty()) {
+            caller = "Unknown";
+        }
 
-    } catch (Exception e) {
-
-        ringtonePlaying = false;
-
-        System.err.println("Failed to start ringtone:");
-        e.printStackTrace();
-    }
-}
-
-private void stopRingtone() {
-
-    if (ringtone != null) {
-        ringtone.stop();
+        incomingCallerLabel.setText(caller);
+        answerButton.setDisable(false);
+        rejectButton.setDisable(false);
     }
 
-    ringtonePlaying = false;
+    @FXML
+    public void onAnswer() {
 
-    System.out.println("Ringtone stopped");
-}
+        if (sipManager.getIncomingCallService() == null) {
+            return;
+        }
 
+        if (sipManager.getCallState() != CallState.RINGING) {
+            return;
+        }
+
+        stopRingtone();
+
+        sipManager.getIncomingCallService().acceptIncomingCall();
+
+        answerButton.setDisable(true);
+        rejectButton.setDisable(true);
+    }
+
+    @FXML
+    public void onReject() {
+
+        if (sipManager.getIncomingCallService() == null) {
+            return;
+        }
+
+        if (sipManager.getCallState() != CallState.RINGING) {
+            return;
+        }
+
+        stopRingtone();
+
+        sipManager.getIncomingCallService().rejectIncomingCall();
+
+        answerButton.setDisable(true);
+        rejectButton.setDisable(true);
+
+        incomingCallerLabel.setText("---------");
+    }
+
+    private synchronized void startRingtone() {
+
+        if (ringtonePlaying) {
+            return;
+        }
+
+        try {
+
+            if (ringtone == null) {
+
+                URL resource = getClass().getResource("/sounds/ringtone.wav");
+
+                if (resource == null) {
+                    System.err.println("Ringtone resource not found!");
+                    return;
+                }
+
+                System.out.println("Ringtone path: " + resource);
+                ringtone = new AudioClip(resource.toExternalForm());
+                ringtone.setVolume(1.0);
+                ringtone.setCycleCount(AudioClip.INDEFINITE);
+            }
+
+            ringtonePlaying = true;
+            ringtone.play();
+
+            System.out.println("Ringtone started");
+
+        } catch (Exception e) {
+            ringtonePlaying = false;
+            System.err.println("Failed to start ringtone:");
+            e.printStackTrace();
+        }
+    }
+
+    private synchronized void stopRingtone() {
+
+        if (ringtonePlaying || ringtone != null) {
+            if (ringtone != null) {
+                ringtone.stop();
+                ringtone = null; 
+            }
+            ringtonePlaying = false;
+            System.out.println("Ringtone stopped successfully");
+        }
+    }
 }

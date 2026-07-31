@@ -23,40 +23,35 @@ import com.sipclient.sip.service.RegisterService;
 import com.sipclient.sip.dialog.DialogManager;
 import com.sipclient.sip.dialog.CallState;
 import javax.sip.Dialog;
-
+import com.sipclient.sip.handler.RequestDispatcher;
+import com.sipclient.sip.handler.IncomingInviteHandler;
+import com.sipclient.sip.handler.ByeRequestHandler;
+import com.sipclient.sip.handler.CancelRequestHandler;
+import com.sipclient.sip.handler.OptionsRequestHandler;
+import com.sipclient.sip.handler.AckRequestHandler;
 public class SipListenerImpl implements SipListener {
 
     private final RegisterService registerService;
 
     private final InviteService inviteService;
     private final DialogManager dialogManager;
-
-    public SipListenerImpl(
+private final RequestDispatcher requestDispatcher;
+public SipListenerImpl(
         RegisterService registerService,
         InviteService inviteService,
-        DialogManager dialogManager) {
+        DialogManager dialogManager,
+        RequestDispatcher requestDispatcher) {
 
     this.registerService = registerService;
     this.inviteService = inviteService;
     this.dialogManager = dialogManager;
-
+    this.requestDispatcher = requestDispatcher;
 }
 
-    @Override
+@Override
 public void processRequest(RequestEvent requestEvent) {
 
-    Request request = requestEvent.getRequest();
-
-    System.out.println("Received Request: "
-            + request.getMethod());
-
-    if (Request.BYE.equals(request.getMethod())) {
-
-        dialogManager.setState(CallState.DISCONNECTED);
-
-        dialogManager.reset();
-
-    }
+    requestDispatcher.dispatch(requestEvent);
 
 }
 

@@ -1,8 +1,9 @@
 package com.sipclient.sip.dialog;
-
+import com.sipclient.sip.model.IncomingCallSession;
 public class DialogManager {
 
     private final CallSession currentSession;
+    private IncomingCallSession incomingCallSession;
 
     public DialogManager() {
 
@@ -15,6 +16,7 @@ public class DialogManager {
         return currentSession;
 
     }
+
 
     public void setState(CallState state) {
 
@@ -35,5 +37,13 @@ public class DialogManager {
        currentSession.clear();
 
     }
+
+    public IncomingCallSession getIncomingCallSession() {
+    return incomingCallSession;
+}
+
+public void setIncomingCallSession(IncomingCallSession incomingCallSession) {
+    this.incomingCallSession = incomingCallSession;
+}
 
 }

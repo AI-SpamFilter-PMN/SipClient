@@ -12,6 +12,9 @@ import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
 import javafx.util.Duration;
+import javafx.application.Platform;
+import javafx.scene.media.AudioClip;
+import java.net.URL;
 
 public class MainController {
 
@@ -20,6 +23,8 @@ public class MainController {
     private final SipManager sipManager = new SipManager();
 
     private Timeline timer;
+private AudioClip ringtone;
+private boolean ringtonePlaying = false;
 
     @FXML
     private TextField usernameField;
@@ -41,6 +46,14 @@ public class MainController {
 
     @FXML
     private Button hangupButton;
+    @FXML
+private Label incomingCallerLabel;
+
+@FXML
+private Button answerButton;
+
+@FXML
+private Button rejectButton;
 
     @FXML
     public void onRegister() {
@@ -132,22 +145,158 @@ sipManager.getInviteService().hangup();
                 statusLabel.setText("Calling...");
                 break;
 
-            case RINGING:
-                statusLabel.setText("Ringing...");
-                break;
+           case RINGING:
 
+    statusLabel.setText("Incoming Call");
+
+    updateIncomingCallUI();
+
+    startRingtone();
+
+    break;
             case IN_CALL:
-                statusLabel.setText("In Call");
-                break;
+
+    stopRingtone();
+
+    statusLabel.setText("In Call");
+
+    answerButton.setDisable(true);
+    rejectButton.setDisable(true);
+
+    break;
 
             case DISCONNECTED:
-                statusLabel.setText("Disconnected");
-                break;
+
+    stopRingtone();
+
+    statusLabel.setText("Disconnected");
+
+    answerButton.setDisable(true);
+    rejectButton.setDisable(true);
+
+    incomingCallerLabel.setText("---------");
+
+    break;
 
             default:
                 statusLabel.setText(state.toString());
                 break;
         }
     }
+
+    private void updateIncomingCallUI() {
+
+    var session =
+            sipManager.getDialogManager()
+                    .getIncomingCallSession();
+
+    if (session == null) {
+        return;
+    }
+
+    String caller = session.getCallerNumber();
+
+    if (caller == null || caller.isEmpty()) {
+        caller = "Unknown";
+    }
+
+    incomingCallerLabel.setText(caller);
+
+    answerButton.setDisable(false);
+    rejectButton.setDisable(false);
+}
+   @FXML
+public void onAnswer() {
+
+    if (sipManager.getIncomingCallService() == null) {
+        return;
+    }
+
+    if (sipManager.getCallState() != CallState.RINGING) {
+        return;
+    }
+
+    stopRingtone();
+
+    sipManager.getIncomingCallService()
+            .acceptIncomingCall();
+
+    answerButton.setDisable(true);
+    rejectButton.setDisable(true);
+
+    incomingCallerLabel.setText("---------");
+}
+
+@FXML
+public void onReject() {
+
+    if (sipManager.getIncomingCallService() == null) {
+        return;
+    }
+
+    if (sipManager.getCallState() != CallState.RINGING) {
+        return;
+    }
+
+    stopRingtone();
+
+    sipManager.getIncomingCallService()
+            .rejectIncomingCall();
+
+    answerButton.setDisable(true);
+    rejectButton.setDisable(true);
+
+    incomingCallerLabel.setText("---------");
+}
+private void startRingtone() {
+
+    if (ringtonePlaying) {
+        return;
+    }
+
+    try {
+
+        if (ringtone == null) {
+
+            URL resource = getClass()
+                    .getResource("/sounds/ringtone.wav");
+
+            if (resource == null) {
+                System.err.println("Ringtone resource not found!");
+                return;
+            }
+
+            System.out.println("Ringtone path: " + resource);
+
+            ringtone = new AudioClip(resource.toExternalForm());
+
+            ringtone.setVolume(1.0);
+            ringtone.setCycleCount(AudioClip.INDEFINITE);
+        }
+
+        ringtonePlaying = true;
+        ringtone.play();
+
+        System.out.println("Ringtone started");
+
+    } catch (Exception e) {
+
+        ringtonePlaying = false;
+
+        System.err.println("Failed to start ringtone:");
+        e.printStackTrace();
+    }
+}
+
+private void stopRingtone() {
+
+    if (ringtone != null) {
+        ringtone.stop();
+    }
+
+    ringtonePlaying = false;
+
+    System.out.println("Ringtone stopped");
+}
 
 }

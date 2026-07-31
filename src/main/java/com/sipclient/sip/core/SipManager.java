@@ -6,6 +6,14 @@ import com.sipclient.sip.listener.SipListenerImpl;
 import com.sipclient.sip.model.SipAccount;
 import com.sipclient.sip.service.InviteService;
 import com.sipclient.sip.service.RegisterService;
+import com.sipclient.sip.service.IncomingCallService;
+
+import com.sipclient.sip.handler.IncomingInviteHandler;
+import com.sipclient.sip.handler.ByeRequestHandler;
+import com.sipclient.sip.handler.CancelRequestHandler;
+import com.sipclient.sip.handler.OptionsRequestHandler;
+import com.sipclient.sip.handler.AckRequestHandler;
+import com.sipclient.sip.handler.RequestDispatcher;
 
 public class SipManager {
 
@@ -14,6 +22,7 @@ public class SipManager {
     private InviteService inviteService;
 
     private final DialogManager dialogManager;
+    private IncomingCallService incomingCallService;
 
     public SipManager() {
 
@@ -27,6 +36,9 @@ public class SipManager {
         return inviteService;
 
     }
+    public IncomingCallService getIncomingCallService() {
+    return incomingCallService;
+}
 
     public DialogManager getDialogManager() {
 
@@ -44,7 +56,15 @@ public class SipManager {
 
         try {
 
+            // ==========================================
+            // SIP INITIALIZATION
+            // ==========================================
+
             initializer.initialize();
+
+            // ==========================================
+            // REGISTER SERVICE
+            // ==========================================
 
             RegisterService registerService =
                     new RegisterService(
@@ -52,6 +72,10 @@ public class SipManager {
                             initializer.getAddressFactory(),
                             initializer.getHeaderFactory(),
                             initializer.getMessageFactory());
+
+            // ==========================================
+            // OUTGOING INVITE SERVICE
+            // ==========================================
 
             inviteService =
                     new InviteService(
@@ -62,13 +86,69 @@ public class SipManager {
                             initializer.getInviteRequestFactory(),
                             dialogManager);
 
+            // ==========================================
+            // INCOMING CALL SERVICE
+            // ==========================================
+
+            incomingCallService =
+        new IncomingCallService(
+                initializer.getSipProvider(),
+                initializer.getMessageFactory(),
+                initializer.getAddressFactory(),
+                initializer.getHeaderFactory(),
+                dialogManager);
+
+            // ==========================================
+            // REQUEST HANDLERS
+            // ==========================================
+
+            IncomingInviteHandler incomingInviteHandler =
+                    new IncomingInviteHandler(
+                            incomingCallService);
+
+         ByeRequestHandler byeHandler =
+        new ByeRequestHandler(
+                initializer.getSipProvider(),
+                initializer.getMessageFactory(),
+                dialogManager);
+CancelRequestHandler cancelHandler =
+        new CancelRequestHandler();
+
+            OptionsRequestHandler optionsHandler =
+                    new OptionsRequestHandler();
+
+            AckRequestHandler ackHandler =
+                    new AckRequestHandler(
+                            dialogManager);
+
+            // ==========================================
+            // REQUEST DISPATCHER
+            // ==========================================
+
+            RequestDispatcher requestDispatcher =
+                    new RequestDispatcher(
+                            incomingInviteHandler,
+                            byeHandler,
+                            cancelHandler,
+                            optionsHandler,
+                            ackHandler);
+
+            // ==========================================
+            // SIP LISTENER
+            // ==========================================
+
             SipListenerImpl listener =
                     new SipListenerImpl(
                             registerService,
                             inviteService,
-                            dialogManager);
+                            dialogManager,
+                            requestDispatcher);
 
             initializer.registerListener(listener);
+
+            // ==========================================
+            // REGISTER
+            // ==========================================
 
             registerService.register(account);
 
@@ -88,9 +168,10 @@ public class SipManager {
 
         if (inviteService == null) {
 
-            System.out.println("InviteService is not initialized.");
-            return;
+            System.out.println(
+                    "InviteService is not initialized.");
 
+            return;
         }
 
         inviteService.call(

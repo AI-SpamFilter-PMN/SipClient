@@ -1,136 +1,162 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <?import javafx.geometry.Insets?>
+
 <?import javafx.scene.control.*?>
+
 <?import javafx.scene.layout.*?>
 
 <BorderPane xmlns:fx="http://javafx.com/fxml"
-            fx:controller="com.sipclient.controller.MainController">
+         fx:controller="com.sipclient.controller.MainController">
 
-    <top>
-        <Label text="SIP Client"
-               style="-fx-font-size:22px; -fx-font-weight:bold;"
-               BorderPane.alignment="CENTER"/>
-    </top>
+<top>
+    <Label text="SIP Client"
+           style="-fx-font-size:22px; -fx-font-weight:bold;"
+           BorderPane.alignment="CENTER"/>
+</top>
 
-    <center>
+<center>
 
-        <VBox spacing="20" alignment="TOP_CENTER">
+    <VBox spacing="20"
+          alignment="TOP_CENTER">
 
-            <padding>
-                <Insets top="20" right="30" bottom="20" left="30"/>
-            </padding>
+        <padding>
+            <Insets top="20"
+                    right="30"
+                    bottom="20"
+                    left="30"/>
+        </padding>
 
-            <!-- Registration -->
+        <!-- ========================= -->
+        <!-- Registration -->
+        <!-- ========================= -->
 
-            <TitledPane text="Registration" collapsible="false">
+        <TitledPane text="Registration"
+                    collapsible="false">
 
-                <GridPane hgap="10" vgap="10">
+            <GridPane hgap="10"
+                      vgap="10">
 
-                    <Label text="Username:"
+                <Label text="Username:"
+                       GridPane.rowIndex="0"
+                       GridPane.columnIndex="0"/>
+
+                <TextField fx:id="usernameField"
+                           promptText="1001"
                            GridPane.rowIndex="0"
-                           GridPane.columnIndex="0"/>
-
-                    <TextField fx:id="usernameField"
-                               promptText="1001"
-                               GridPane.rowIndex="0"
-                               GridPane.columnIndex="1"/>
-
-                    <Label text="Password:"
-                           GridPane.rowIndex="1"
-                           GridPane.columnIndex="0"/>
-
-                    <PasswordField fx:id="passwordField"
-                                   GridPane.rowIndex="1"
-                                   GridPane.columnIndex="1"/>
-
-                    <Label text="Domain:"
-                           GridPane.rowIndex="2"
-                           GridPane.columnIndex="0"/>
-
-                    <TextField fx:id="domainField"
-                               promptText="localhost"
-                               GridPane.rowIndex="2"
-                               GridPane.columnIndex="1"/>
-
-                    <Label text="Status:"
-                           GridPane.rowIndex="3"
-                           GridPane.columnIndex="0"/>
-
-                    <Label fx:id="statusLabel"
-                           text="Offline"
-                           GridPane.rowIndex="3"
                            GridPane.columnIndex="1"/>
 
-                    <Button fx:id="registerButton"
-                            text="Register"
-                            onAction="#onRegister"
-                            GridPane.rowIndex="4"
-                            GridPane.columnIndex="1"/>
+                <Label text="Password:"
+                       GridPane.rowIndex="1"
+                       GridPane.columnIndex="0"/>
 
-                </GridPane>
-
-            </TitledPane>
-
-            <!-- Call -->
-
-            <TitledPane text="Call" collapsible="false">
-
-                <GridPane hgap="10" vgap="10">
-
-                    <Label text="Destination:"
-                           GridPane.rowIndex="0"
-                           GridPane.columnIndex="0"/>
-
-                    <TextField fx:id="destinationField"
-                               promptText="1002"
-                               GridPane.rowIndex="0"
+                <PasswordField fx:id="passwordField"
+                               GridPane.rowIndex="1"
                                GridPane.columnIndex="1"/>
 
-                    <HBox spacing="10"
-      GridPane.rowIndex="0"
-      GridPane.columnIndex="2">
+                <Label text="Domain:"
+                       GridPane.rowIndex="2"
+                       GridPane.columnIndex="0"/>
 
-    <Button fx:id="callButton"
-            text="Call"
-            onAction="#onCall"/>
+                <TextField fx:id="domainField"
+                           promptText="localhost"
+                           GridPane.rowIndex="2"
+                           GridPane.columnIndex="1"/>
 
-    <Button fx:id="hangupButton"
-            text="Hang Up"
-            onAction="#onHangup"/>
+                <Label text="Status:"
+                       GridPane.rowIndex="3"
+                       GridPane.columnIndex="0"/>
 
-</HBox>
-                </GridPane>
+                <Label fx:id="statusLabel"
+                       text="Offline"
+                       GridPane.rowIndex="3"
+                       GridPane.columnIndex="1"/>
 
-            </TitledPane>
+                <Button fx:id="registerButton"
+                        text="Register"
+                        onAction="#onRegister"
+                        GridPane.rowIndex="4"
+                        GridPane.columnIndex="1"/>
 
-            <!-- Incoming Call -->
+            </GridPane>
 
-            <TitledPane text="Incoming Call" collapsible="false">
+        </TitledPane>
 
-                <VBox spacing="10">
 
-                    <Label text="From:"/>
+        <!-- ========================= -->
+        <!-- Outgoing Call -->
+        <!-- ========================= -->
 
-                    <Label fx:id="incomingCallerLabel"
-                           text="---------"/>
+        <TitledPane text="Call"
+                    collapsible="false">
 
-                    <HBox spacing="15">
+            <GridPane hgap="10"
+                      vgap="10">
 
-                        <Button fx:id="answerButton"
-                                text="Answer"/>
+                <Label text="Destination:"
+                       GridPane.rowIndex="0"
+                       GridPane.columnIndex="0"/>
 
-                        <Button fx:id="rejectButton"
-                                text="Reject"/>
+                <TextField fx:id="destinationField"
+                           promptText="1002"
+                           GridPane.rowIndex="0"
+                           GridPane.columnIndex="1"/>
 
-                    </HBox>
+                <HBox spacing="10"
+                      GridPane.rowIndex="0"
+                      GridPane.columnIndex="2">
 
-                </VBox>
+                    <Button fx:id="callButton"
+                            text="Call"
+                            onAction="#onCall"/>
 
-            </TitledPane>
+                    <Button fx:id="hangupButton"
+                            text="Hang Up"
+                            onAction="#onHangup"/>
 
-        </VBox>
+                </HBox>
 
-    </center>
+            </GridPane>
+
+        </TitledPane>
+
+
+        <!-- ========================= -->
+        <!-- Incoming Call -->
+        <!-- ========================= -->
+
+        <TitledPane text="Incoming Call"
+                    collapsible="false">
+
+            <VBox spacing="10">
+
+                <Label text="From:"
+                       style="-fx-font-weight:bold;"/>
+
+                <Label fx:id="incomingCallerLabel"
+                       text="---------"/>
+
+                <HBox spacing="15">
+
+                    <Button fx:id="answerButton"
+                            text="Answer"
+                            disable="true"
+                            onAction="#onAnswer"/>
+
+                    <Button fx:id="rejectButton"
+                            text="Reject"
+                            disable="true"
+                            onAction="#onReject"/>
+
+                </HBox>
+
+            </VBox>
+
+        </TitledPane>
+
+    </VBox>
+
+</center>
+
 
 </BorderPane>

@@ -7,6 +7,8 @@ import java.net.InetAddress;
 
 public class RtpMediaEngine {
 
+    private static final RtpMediaEngine INSTANCE = new RtpMediaEngine();
+
     private DatagramSocket socket;
     private TargetDataLine microphone;
     private SourceDataLine speaker;
@@ -27,50 +29,65 @@ public class RtpMediaEngine {
         }
     }
 
+    private RtpMediaEngine() {}
+
+    public static RtpMediaEngine getInstance() {
+        return INSTANCE;
+    }
+
     public synchronized void startStream(String remoteIp, int remotePort, int localPort) {
         if (isRunning) {
-            stopStream();
+            stopAudio();
         }
 
         try {
-            System.out.println("Starting RTP Stream to " + remoteIp + ":" + remotePort + " via local port " + localPort);
+            System.out.println("Starting Low-Latency RTP Stream to " + remoteIp + ":" + remotePort);
 
             socket = new DatagramSocket(localPort);
+           
+            socket.setSoTimeout(500);
             InetAddress remoteAddress = InetAddress.getByName(remoteIp);
 
             AudioFormat format = new AudioFormat(8000.0f, 16, 1, true, false);
 
+           
+            int bufferSize = 320;
+
             DataLine.Info micInfo = new DataLine.Info(TargetDataLine.class, format);
             microphone = (TargetDataLine) AudioSystem.getLine(micInfo);
-            microphone.open(format, 3200); 
+            microphone.open(format, bufferSize); 
             microphone.start();
+            microphone.flush(); 
 
             DataLine.Info speakerInfo = new DataLine.Info(SourceDataLine.class, format);
             speaker = (SourceDataLine) AudioSystem.getLine(speakerInfo);
-            speaker.open(format, 3200); 
+            speaker.open(format, bufferSize); 
             speaker.start();
+            speaker.flush(); 
 
             isRunning = true;
 
             senderThread = new Thread(() -> runSender(remoteAddress, remotePort));
             senderThread.setName("RTP-Sender-Thread");
+            senderThread.setPriority(Thread.MAX_PRIORITY); 
             senderThread.start();
 
             receiverThread = new Thread(this::runReceiver);
             receiverThread.setName("RTP-Receiver-Thread");
+            receiverThread.setPriority(Thread.MAX_PRIORITY); 
             receiverThread.start();
 
-            System.out.println("RTP Media Engine Started Successfully (G.711u Codec Enabled)");
+            System.out.println("RTP Media Engine Started (Optimized Low-Latency)");
 
         } catch (Exception e) {
             System.err.println("Failed to start RTP Media Engine:");
             e.printStackTrace();
-            stopStream();
+            stopAudio();
         }
     }
 
     private void runSender(InetAddress remoteAddress, int remotePort) {
-        byte[] pcmBuffer = new byte[320];
+        byte[] pcmBuffer = new byte[320]; 
         byte[] ulawPayload = new byte[160];
         int seqNum = 0;
         long timeStamp = 0;
@@ -112,7 +129,7 @@ public class RtpMediaEngine {
     }
 
     private void runReceiver() {
-        byte[] socketBuffer = new byte[1024];
+        byte[] socketBuffer = new byte[172];
 
         while (isRunning && !Thread.currentThread().isInterrupted()) {
             try {
@@ -124,7 +141,6 @@ public class RtpMediaEngine {
                     int payloadLength = length - 12;
                     byte[] pcmOut = new byte[payloadLength * 2];
 
-                    // فك تشفير u-law إلى PCM 16-bit
                     for (int i = 0; i < payloadLength; i++) {
                         byte ulawSample = socketBuffer[12 + i];
                         short pcmSample = ULAW_TO_LINEAR[ulawSample & 0xFF];
@@ -133,16 +149,16 @@ public class RtpMediaEngine {
                         pcmOut[i * 2 + 1] = (byte) ((pcmSample >> 8) & 0xFF);
                     }
 
-                    // تشغيل الصوت النقي على السماعة
                     speaker.write(pcmOut, 0, pcmOut.length);
                 }
+            } catch (java.net.SocketTimeoutException e) {
             } catch (Exception e) {
                 if (isRunning) System.err.println("RTP Receive Error: " + e.getMessage());
             }
         }
     }
 
-    public synchronized void stopStream() {
+    public synchronized void stopAudio() {
         if (!isRunning && socket == null) {
             return;
         }
@@ -156,12 +172,14 @@ public class RtpMediaEngine {
 
         if (microphone != null) {
             microphone.stop();
+            microphone.flush();
             microphone.close();
             microphone = null;
         }
 
         if (speaker != null) {
             speaker.stop();
+            speaker.flush();
             speaker.close();
             speaker = null;
         }
@@ -172,6 +190,9 @@ public class RtpMediaEngine {
         System.out.println("RTP Media Engine Stopped Cleanly");
     }
 
+    public synchronized void stopStream() {
+        stopAudio();
+    }
 
     private static short decodeUlaw(byte ulaw) {
         ulaw = (byte) ~ulaw;

@@ -7,25 +7,19 @@ import java.util.UUID;
 
 import javax.sip.ClientTransaction;
 import javax.sip.SipProvider;
-
 import javax.sip.address.AddressFactory;
-
 import javax.sip.header.AuthorizationHeader;
 import javax.sip.header.CallIdHeader;
 import javax.sip.header.FromHeader;
 import javax.sip.header.HeaderFactory;
 import javax.sip.header.WWWAuthenticateHeader;
-
 import javax.sip.message.Request;
 
 public class RegisterAuthenticator {
 
     private final SipProvider sipProvider;
-
     private final RegisterRequestFactory requestFactory;
-
     private final AuthorizationHeaderBuilder authorizationBuilder;
-
     private final DigestCalculator digestCalculator;
 
     public RegisterAuthenticator(
@@ -36,14 +30,8 @@ public class RegisterAuthenticator {
 
         this.sipProvider = sipProvider;
         this.requestFactory = requestFactory;
-
-        this.authorizationBuilder =
-                new AuthorizationHeaderBuilder(
-                        headerFactory,
-                        addressFactory);
-
-        this.digestCalculator =
-                new DigestCalculator();
+        this.authorizationBuilder = new AuthorizationHeaderBuilder(headerFactory, addressFactory);
+        this.digestCalculator = new DigestCalculator();
     }
 
     public void authenticate(
@@ -54,91 +42,62 @@ public class RegisterAuthenticator {
             WWWAuthenticateHeader authHeader) {
 
         try {
+            String realm = authHeader.getRealm();
+            String nonce = authHeader.getNonce();
+            String opaque = authHeader.getOpaque();
+            String qop = authHeader.getQop();
 
-            String realm =
-                    authHeader.getRealm();
+            // 💡 استخدام البورت ديناميكياً من الحساب أو افتراض 5066
+            int targetPort = (account.getPort() > 0) ? account.getPort() : 5066;
+            String uri = "sip:" + account.getDomain() + ":" + targetPort;
 
-            String nonce =
-                    authHeader.getNonce();
+            String nc = "00000001";
+            String cnonce = UUID.randomUUID().toString().replace("-", "").substring(0, 16);
 
-            String opaque =
-                    authHeader.getOpaque();
+            String response = digestCalculator.calculateResponse(
+                    account.getUsername(),
+                    realm,
+                    account.getPassword(),
+                    Request.REGISTER,
+                    uri,
+                    nonce,
+                    nc,
+                    cnonce,
+                    qop);
 
-            String qop =
-                    authHeader.getQop();
-
-            String uri =
-        "sip:" + account.getDomain() + ":" + 5060;
-
-            String nc =
-                    "00000001";
-
-            String cnonce =
-                    UUID.randomUUID()
-                            .toString()
-                            .replace("-", "")
-                            .substring(0, 16);
-
-            String response =
-                    digestCalculator.calculateResponse(
-                            account.getUsername(),
-                            realm,
-                            account.getPassword(),
-                            Request.REGISTER,
-                            uri,
-                            nonce,
-                            nc,
-                            cnonce,
-                            qop);
-
-            System.out.println();
-            System.out.println("========== DIGEST ==========");
+            System.out.println("\n========== DIGEST ==========");
             System.out.println("Response : " + response);
             System.out.println("============================");
 
-            AuthorizationHeader authorization =
-                    authorizationBuilder.build(
-                            account.getUsername(),
-                            realm,
-                            nonce,
-                            uri,
-                            response,
-                            opaque,
-                            cnonce,
-                            nc,
-                            qop);
+            AuthorizationHeader authorization = authorizationBuilder.build(
+                    account.getUsername(),
+                    realm,
+                    nonce,
+                    uri,
+                    response,
+                    opaque,
+                    cnonce,
+                    nc,
+                    qop);
 
-            System.out.println();
-            System.out.println("Authorization Header Created");
+            Request request = requestFactory.createAuthenticated(
+                    account,
+                    callId,
+                    fromHeader,
+                    sequence,
+                    authorization);
 
-            Request request =
-                    requestFactory.createAuthenticated(
-                            account,
-                            callId,
-                            fromHeader,
-                            sequence,
-                            authorization);
-
-            System.out.println();
-            System.out.println("===== AUTH REGISTER =====");
+            System.out.println("\n===== AUTH REGISTER =====");
             System.out.println(request);
             System.out.println("=========================");
 
-            ClientTransaction transaction =
-                    sipProvider.getNewClientTransaction(
-                            request);
-
+            ClientTransaction transaction = sipProvider.getNewClientTransaction(request);
             transaction.sendRequest();
 
-            System.out.println();
-            System.out.println("Authenticated REGISTER Sent");
+            System.out.println("\nAuthenticated REGISTER Sent");
 
         } catch (Exception e) {
-
             e.printStackTrace();
-
         }
-
     }
-
 }

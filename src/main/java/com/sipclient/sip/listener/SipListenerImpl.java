@@ -22,6 +22,7 @@ import com.sipclient.sip.service.RegisterService;
 import com.sipclient.sip.dialog.DialogManager;
 import com.sipclient.sip.dialog.CallState;
 import com.sipclient.sip.handler.RequestDispatcher;
+import com.sipclient.sip.media.RtpMediaEngine;
 
 public class SipListenerImpl implements SipListener {
 
@@ -156,6 +157,7 @@ public class SipListenerImpl implements SipListener {
                 System.out.println();
                 System.out.println("BYE Completed");
 
+                RtpMediaEngine.getInstance().stopAudio();
                 dialogManager.setState(CallState.DISCONNECTED);
                 dialogManager.reset();
             }
@@ -165,6 +167,7 @@ public class SipListenerImpl implements SipListener {
     @Override
     public void processTimeout(TimeoutEvent timeoutEvent) {
         System.out.println("Request Timeout");
+        RtpMediaEngine.getInstance().stopAudio();
         dialogManager.setState(CallState.DISCONNECTED);
         dialogManager.reset();
     }
@@ -172,12 +175,13 @@ public class SipListenerImpl implements SipListener {
     @Override
     public void processIOException(IOExceptionEvent exceptionEvent) {
         System.out.println("IO Exception");
+        RtpMediaEngine.getInstance().stopAudio();
         dialogManager.setState(CallState.DISCONNECTED);
         dialogManager.reset();
     }
-@Override
-    public void processTransactionTerminated(TransactionTerminatedEvent transactionTerminatedEvent) {
 
+    @Override
+    public void processTransactionTerminated(TransactionTerminatedEvent transactionTerminatedEvent) {
         System.out.println("Transaction Terminated (Ignored to keep call active)");
     }
 
@@ -185,13 +189,10 @@ public class SipListenerImpl implements SipListener {
     public void processDialogTerminated(DialogTerminatedEvent dialogTerminatedEvent) {
         System.out.println("Dialog Terminated Event Received");
 
-        if (dialogManager.getState() == CallState.TERMINATING || dialogManager.getState() == CallState.DISCONNECTED) {
-            dialogManager.setState(CallState.DISCONNECTED);
-            dialogManager.reset();
-        } else {
-            System.out.println("Dialog Terminated ignored because call is still active in state: " + dialogManager.getState());
-        }
-        
+        // تنظيف محرك الصوت وإعادة ضبط الحالة دائماً عند انتهاء الـ Dialog من الشبكة
+        RtpMediaEngine.getInstance().stopAudio();
+        dialogManager.setState(CallState.DISCONNECTED);
+        dialogManager.reset();
+        System.out.println("Call cleaned up following Dialog Termination.");
     }
-    
 }

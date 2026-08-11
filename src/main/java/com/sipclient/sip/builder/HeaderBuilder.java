@@ -40,201 +40,86 @@ public class HeaderBuilder {
         this.addressFactory = addressFactory;
     }
 
-    /*
-     * Via
-     */
     public List<ViaHeader> buildViaHeaders() throws Exception {
 
         List<ViaHeader> headers = new ArrayList<>();
 
+        ListeningPoint listeningPoint = sipProvider.getListeningPoint("udp");
+
+        String ip = listeningPoint != null ? listeningPoint.getIPAddress() : SipConfig.LOCAL_IP;
+        int port = listeningPoint != null ? listeningPoint.getPort() : SipConfig.LOCAL_PORT;
+
+        if ("0.0.0.0".equals(ip) || "127.0.0.1".equals(ip)) {
+            ip = SipConfig.LOCAL_IP;
+        }
+
         ViaHeader via =
                 headerFactory.createViaHeader(
-                        SipConfig.LOCAL_IP,
-                        SipConfig.LOCAL_PORT,
+                        ip,
+                        port,
                         ListeningPoint.UDP,
                         null);
 
         headers.add(via);
 
         return headers;
-
     }
 
-    /*
-     * From (Automatic Tag)
-     */
-    public FromHeader buildFrom(
-            SipAccount account)
-            throws Exception {
-
+    public FromHeader buildFrom(SipAccount account) throws Exception {
         return buildFrom(
                 account.getUsername(),
                 account.getDomain(),
-                Long.toHexString(
-                        System.currentTimeMillis()));
-
+                Long.toHexString(System.currentTimeMillis()));
     }
 
-    /*
-     * From (Custom Tag)
-     */
-    public FromHeader buildFrom(
-            SipAccount account,
-            String tag)
-            throws Exception {
-
-        return buildFrom(
-                account.getUsername(),
-                account.getDomain(),
-                tag);
-
+    public FromHeader buildFrom(SipAccount account, String tag) throws Exception {
+        return buildFrom(account.getUsername(), account.getDomain(), tag);
     }
 
-    /*
-     * Generic From
-     */
-    public FromHeader buildFrom(
-            String username,
-            String domain,
-            String tag)
-            throws Exception {
-
-        SipURI uri =
-                addressFactory.createSipURI(
-                        username,
-                        domain);
-
-        Address address =
-                addressFactory.createAddress(uri);
-
-        return headerFactory.createFromHeader(
-                address,
-                tag);
-
+    public FromHeader buildFrom(String username, String domain, String tag) throws Exception {
+        SipURI uri = addressFactory.createSipURI(username, domain);
+        Address address = addressFactory.createAddress(uri);
+        return headerFactory.createFromHeader(address, tag);
     }
 
-    /*
-     * To (Register)
-     */
-    public ToHeader buildTo(
-            SipAccount account)
-            throws Exception {
-
-        return buildTo(
-                account.getUsername(),
-                account.getDomain());
-
+    public ToHeader buildTo(SipAccount account) throws Exception {
+        return buildTo(account.getUsername(), account.getDomain());
     }
 
-    /*
-     * Generic To
-     */
-    public ToHeader buildTo(
-            String username,
-            String domain)
-            throws Exception {
-
-        SipURI uri =
-                addressFactory.createSipURI(
-                        username,
-                        domain);
-
-        Address address =
-                addressFactory.createAddress(uri);
-
-        return headerFactory.createToHeader(
-                address,
-                null);
-
+    public ToHeader buildTo(String username, String domain) throws Exception {
+        SipURI uri = addressFactory.createSipURI(username, domain);
+        Address address = addressFactory.createAddress(uri);
+        return headerFactory.createToHeader(address, null);
     }
 
-    /*
-     * Call-ID
-     */
     public CallIdHeader buildCallId() {
-
         return sipProvider.getNewCallId();
-
     }
 
-    /*
-     * REGISTER CSeq
-     */
-    public CSeqHeader buildCSeq()
-            throws Exception {
-
-        return buildCSeq(
-                1L,
-                "REGISTER");
-
+    public CSeqHeader buildCSeq() throws Exception {
+        return buildCSeq(1L, "REGISTER");
     }
 
-    /*
-     * Generic CSeq
-     */
-    public CSeqHeader buildCSeq(
-            long sequence,
-            String method)
-            throws Exception {
-
-        return headerFactory.createCSeqHeader(
-                sequence,
-                method);
-
+    public CSeqHeader buildCSeq(long sequence, String method) throws Exception {
+        return headerFactory.createCSeqHeader(sequence, method);
     }
 
-    /*
-     * Max-Forwards
-     */
-    public MaxForwardsHeader buildMaxForwards()
-            throws Exception {
-
-        return headerFactory.createMaxForwardsHeader(
-                70);
-
+    public MaxForwardsHeader buildMaxForwards() throws Exception {
+        return headerFactory.createMaxForwardsHeader(70);
     }
 
-    /*
-     * Contact
-     */
-    public ContactHeader buildContact(
-            SipAccount account)
-            throws Exception {
-
-        SipURI uri =
-                addressFactory.createSipURI(
-                        account.getUsername(),
-                        SipConfig.LOCAL_IP);
-
-        uri.setPort(
-                SipConfig.LOCAL_PORT);
-
-        Address address =
-                addressFactory.createAddress(uri);
-
-        return headerFactory.createContactHeader(
-                address);
-
+    public ContactHeader buildContact(SipAccount account) throws Exception {
+        SipURI uri = addressFactory.createSipURI(account.getUsername(), SipConfig.LOCAL_IP);
+        uri.setPort(SipConfig.LOCAL_PORT);
+        Address address = addressFactory.createAddress(uri);
+        return headerFactory.createContactHeader(address);
     }
 
-    /*
-     * Expires
-     */
-    public ExpiresHeader buildExpires()
-            throws Exception {
-
-        return headerFactory.createExpiresHeader(
-                3600);
-
+    public ExpiresHeader buildExpires() throws Exception {
+        return headerFactory.createExpiresHeader(3600);
     }
 
-    public ContentTypeHeader buildContentType()
-        throws Exception {
-
-    return headerFactory.createContentTypeHeader(
-            "application",
-            "sdp");
-
-}
-
+    public ContentTypeHeader buildContentType() throws Exception {
+        return headerFactory.createContentTypeHeader("application", "sdp");
+    }
 }

@@ -9,7 +9,7 @@ public class DialogManager {
     private final CallSession currentSession;
     private IncomingCallSession incomingCallSession;
 
-    private final RtpMediaEngine rtpMediaEngine = new RtpMediaEngine();
+    private RtpMediaEngine rtpMediaEngine = RtpMediaEngine.getInstance();
     private final int localRtpPort = 4000; 
 
     public DialogManager() {

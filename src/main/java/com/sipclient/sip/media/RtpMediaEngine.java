@@ -15,6 +15,10 @@ public class RtpMediaEngine {
     private Thread receiverThread;
     private volatile boolean isRunning = false;
 
+    // Recording buffer for post-call ASR + classification
+    private java.io.ByteArrayOutputStream recordingBuffer;
+    private volatile boolean isRecording = false;
+
     private static final byte[] LINEAR_TO_ULAW = new byte[65536];
     private static final short[] ULAW_TO_LINEAR = new short[256];
 
@@ -51,6 +55,10 @@ public class RtpMediaEngine {
             speaker.start();
 
             isRunning = true;
+
+            // Initialize recording buffer
+            recordingBuffer = new java.io.ByteArrayOutputStream();
+            isRecording = true;
 
             senderThread = new Thread(() -> runSender(remoteAddress, remotePort));
             senderThread.setName("RTP-Sender-Thread");
@@ -135,6 +143,11 @@ public class RtpMediaEngine {
 
                     // تشغيل الصوت النقي على السماعة
                     speaker.write(pcmOut, 0, pcmOut.length);
+
+                    // Record incoming audio for post-call ASR
+                    if (isRecording && recordingBuffer != null) {
+                        recordingBuffer.write(pcmOut, 0, pcmOut.length);
+                    }
                 }
             } catch (Exception e) {
                 if (isRunning) System.err.println("RTP Receive Error: " + e.getMessage());
@@ -148,6 +161,7 @@ public class RtpMediaEngine {
         }
 
         isRunning = false;
+        isRecording = false;
 
         if (socket != null && !socket.isClosed()) {
             socket.close();
@@ -170,6 +184,61 @@ public class RtpMediaEngine {
         if (receiverThread != null) receiverThread.interrupt();
 
         System.out.println("RTP Media Engine Stopped Cleanly");
+    }
+
+    /**
+     * Returns the recorded audio as a WAV byte array (8kHz, 16-bit, mono),
+     * or null if no recording was captured.
+     */
+    public byte[] getRecordingWav() {
+        if (recordingBuffer == null || recordingBuffer.size() == 0) {
+            return null;
+        }
+        byte[] pcm = recordingBuffer.toByteArray();
+        return pcmToWav(pcm, 8000, 16, 1);
+    }
+
+    /**
+     * Wraps raw PCM data in a WAV container header.
+     */
+    private static byte[] pcmToWav(byte[] pcm, int sampleRate, int bitsPerSample, int channels) {
+        int dataLength = pcm.length;
+        int chunkSize = 36 + dataLength;
+        int byteRate = sampleRate * channels * bitsPerSample / 8;
+        int blockAlign = channels * bitsPerSample / 8;
+
+        java.io.ByteArrayOutputStream wav = new java.io.ByteArrayOutputStream(44 + dataLength);
+        try {
+            wav.write("RIFF".getBytes("ASCII"));
+            writeIntLE(wav, chunkSize);
+            wav.write("WAVE".getBytes("ASCII"));
+            wav.write("fmt ".getBytes("ASCII"));
+            writeIntLE(wav, 16);
+            writeShortLE(wav, 1); // PCM
+            writeShortLE(wav, channels);
+            writeIntLE(wav, sampleRate);
+            writeIntLE(wav, byteRate);
+            writeShortLE(wav, blockAlign);
+            writeShortLE(wav, bitsPerSample);
+            wav.write("data".getBytes("ASCII"));
+            writeIntLE(wav, dataLength);
+            wav.write(pcm);
+        } catch (Exception e) {
+            return null;
+        }
+        return wav.toByteArray();
+    }
+
+    private static void writeIntLE(java.io.ByteArrayOutputStream out, int v) {
+        out.write(v & 0xFF);
+        out.write((v >> 8) & 0xFF);
+        out.write((v >> 16) & 0xFF);
+        out.write((v >> 24) & 0xFF);
+    }
+
+    private static void writeShortLE(java.io.ByteArrayOutputStream out, int v) {
+        out.write(v & 0xFF);
+        out.write((v >> 8) & 0xFF);
     }
 
 

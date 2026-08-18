@@ -9,6 +9,7 @@ import javax.sip.message.Response;
 
 import com.sipclient.sip.dialog.CallState;
 import com.sipclient.sip.dialog.DialogManager;
+import com.sipclient.sip.media.RtpMediaEngine;
 
 public class ByeRequestHandler {
 
@@ -37,41 +38,29 @@ public class ByeRequestHandler {
             System.out.println("Call-ID: " + request.getHeader("Call-ID"));
             System.out.println("CSeq   : " + request.getHeader("CSeq"));
 
-            ServerTransaction serverTransaction =
-                    event.getServerTransaction();
+            ServerTransaction serverTransaction = event.getServerTransaction();
 
             if (serverTransaction == null) {
-
-                serverTransaction =
-                        sipProvider.getNewServerTransaction(request);
+                serverTransaction = sipProvider.getNewServerTransaction(request);
             }
 
-            Response response =
-                    messageFactory.createResponse(
-                            Response.OK,
-                            request);
+            Response response = messageFactory.createResponse(Response.OK, request);
 
             serverTransaction.sendResponse(response);
 
             System.out.println("200 OK Sent - BYE");
 
-            dialogManager.setState(
-                    CallState.DISCONNECTED);
+            RtpMediaEngine.getInstance().stopAudio();
 
+            dialogManager.setState(CallState.DISCONNECTED);
             dialogManager.reset();
 
-            System.out.println(
-                    "Call State -> DISCONNECTED");
-
-            System.out.println(
-                    "Call Session Reset");
-
+            System.out.println("Call State -> DISCONNECTED");
+            System.out.println("Call Session Reset");
             System.out.println("================================");
 
         } catch (Exception e) {
-
             e.printStackTrace();
-
         }
     }
 }

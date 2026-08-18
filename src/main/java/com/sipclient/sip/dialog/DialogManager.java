@@ -3,13 +3,14 @@ package com.sipclient.sip.dialog;
 import com.sipclient.sip.media.RtpMediaEngine;
 import com.sipclient.sip.media.SdpParser;
 import com.sipclient.sip.model.IncomingCallSession;
+import javax.sip.Dialog;
 
 public class DialogManager {
 
     private final CallSession currentSession;
     private IncomingCallSession incomingCallSession;
 
-    private final RtpMediaEngine rtpMediaEngine = new RtpMediaEngine();
+    private RtpMediaEngine rtpMediaEngine = RtpMediaEngine.getInstance();
     private final int localRtpPort = 4000; 
 
     public DialogManager() {
@@ -50,7 +51,16 @@ public class DialogManager {
 
     public void reset() {
         rtpMediaEngine.stopStream(); 
+        
+        try {
+            if (currentSession != null && currentSession.getDialog() != null) {
+                currentSession.getDialog().delete();
+            }
+        } catch (Exception ignored) {}
+
         currentSession.clear();
+        incomingCallSession = null;
+        System.out.println("DialogManager completely reset.");
     }
 
     public IncomingCallSession getIncomingCallSession() {

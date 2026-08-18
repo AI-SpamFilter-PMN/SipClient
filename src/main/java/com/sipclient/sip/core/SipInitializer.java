@@ -1,5 +1,9 @@
 package com.sipclient.sip.core;
 
+import com.sipclient.sip.config.SipConfig;
+import com.sipclient.sip.factory.InviteRequestFactory;
+import com.sipclient.sip.listener.SipListenerImpl;
+
 import java.util.Properties;
 import java.util.TooManyListenersException;
 
@@ -7,13 +11,9 @@ import javax.sip.ListeningPoint;
 import javax.sip.SipFactory;
 import javax.sip.SipProvider;
 import javax.sip.SipStack;
-
 import javax.sip.address.AddressFactory;
 import javax.sip.header.HeaderFactory;
 import javax.sip.message.MessageFactory;
-
-import com.sipclient.sip.factory.InviteRequestFactory;
-import com.sipclient.sip.listener.SipListenerImpl;
 
 public class SipInitializer {
 
@@ -30,6 +30,9 @@ public class SipInitializer {
 
     public void initialize() throws Exception {
 
+        System.setProperty("java.net.preferIPv4Stack", "true");
+        System.setProperty("java.net.preferIPv4Addresses", "true");
+
         sipFactory = SipFactory.getInstance();
         sipFactory.setPathName("gov.nist");
 
@@ -39,20 +42,18 @@ public class SipInitializer {
 
         Properties properties = new Properties();
 
-        properties.setProperty(
-                "javax.sip.STACK_NAME",
-                "SipClient");
+        properties.setProperty("javax.sip.STACK_NAME", "SipClient");
+        properties.setProperty("gov.nist.javax.sip.TRACE_LEVEL", "16");
+        properties.setProperty("gov.nist.javax.sip.ROUTER_PATH", "gov.nist.javax.sip.stack.DefaultRouter");
 
-        properties.setProperty(
-                "gov.nist.javax.sip.TRACE_LEVEL",
-                "16");
+        properties.setProperty("javax.sip.IP_ADDRESS", SipConfig.LOCAL_IP);
 
         sipStack = sipFactory.createSipStack(properties);
 
         listeningPoint =
                 sipStack.createListeningPoint(
-                        "127.0.0.1",
-                        5070,
+                        SipConfig.LOCAL_IP,
+                        SipConfig.LOCAL_PORT,
                         ListeningPoint.UDP);
 
         sipProvider =
@@ -65,7 +66,7 @@ public class SipInitializer {
                         headerFactory,
                         messageFactory);
 
-        System.out.println("✓ SIP Stack Created");
+        System.out.println("✓ SIP Stack Created on " + SipConfig.LOCAL_IP + ":" + SipConfig.LOCAL_PORT);
 
     }
 

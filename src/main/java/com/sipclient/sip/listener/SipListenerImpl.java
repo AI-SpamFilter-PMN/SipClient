@@ -2,6 +2,7 @@ package com.sipclient.sip.listener;
 
 import java.util.Iterator;
 
+import javax.sip.Dialog;
 import javax.sip.DialogTerminatedEvent;
 import javax.sip.IOExceptionEvent;
 import javax.sip.RequestEvent;
@@ -22,6 +23,7 @@ import com.sipclient.sip.service.RegisterService;
 import com.sipclient.sip.dialog.DialogManager;
 import com.sipclient.sip.dialog.CallState;
 import com.sipclient.sip.handler.RequestDispatcher;
+import com.sipclient.sip.media.RtpMediaEngine;
 
 public class SipListenerImpl implements SipListener {
 
@@ -74,9 +76,10 @@ public class SipListenerImpl implements SipListener {
     public void processResponse(ResponseEvent responseEvent) {
 
         Response response = responseEvent.getResponse();
+        Dialog responseDialog = responseEvent.getDialog();
 
-        if (responseEvent.getDialog() != null) {
-            dialogManager.getCurrentSession().setDialog(responseEvent.getDialog());
+        if (responseDialog != null) {
+            dialogManager.getCurrentSession().setDialog(responseDialog);
             System.out.println("Dialog Stored Successfully");
         }
 
@@ -138,6 +141,9 @@ public class SipListenerImpl implements SipListener {
                     break;
 
                 case Response.OK:
+                    if (dialogManager.getState() == CallState.IN_CALL) {
+                        System.out.println("Received duplicate 200 OK (Retransmission). Re-sending ACK...");
+                    }
                     break;
 
                 default:
@@ -156,6 +162,7 @@ public class SipListenerImpl implements SipListener {
                 System.out.println();
                 System.out.println("BYE Completed");
 
+                RtpMediaEngine.getInstance().stopAudio();
                 dialogManager.setState(CallState.DISCONNECTED);
                 dialogManager.reset();
             }
@@ -165,6 +172,7 @@ public class SipListenerImpl implements SipListener {
     @Override
     public void processTimeout(TimeoutEvent timeoutEvent) {
         System.out.println("Request Timeout");
+        RtpMediaEngine.getInstance().stopAudio();
         dialogManager.setState(CallState.DISCONNECTED);
         dialogManager.reset();
     }
@@ -172,12 +180,13 @@ public class SipListenerImpl implements SipListener {
     @Override
     public void processIOException(IOExceptionEvent exceptionEvent) {
         System.out.println("IO Exception");
+        RtpMediaEngine.getInstance().stopAudio();
         dialogManager.setState(CallState.DISCONNECTED);
         dialogManager.reset();
     }
-@Override
-    public void processTransactionTerminated(TransactionTerminatedEvent transactionTerminatedEvent) {
 
+    @Override
+    public void processTransactionTerminated(TransactionTerminatedEvent transactionTerminatedEvent) {
         System.out.println("Transaction Terminated (Ignored to keep call active)");
     }
 
@@ -185,13 +194,16 @@ public class SipListenerImpl implements SipListener {
     public void processDialogTerminated(DialogTerminatedEvent dialogTerminatedEvent) {
         System.out.println("Dialog Terminated Event Received");
 
-        if (dialogManager.getState() == CallState.TERMINATING || dialogManager.getState() == CallState.DISCONNECTED) {
+        Dialog terminatedDialog = dialogTerminatedEvent.getDialog();
+        Dialog activeDialog = dialogManager.getCurrentSession().getDialog();
+
+        if (activeDialog != null && activeDialog.equals(terminatedDialog)) {
+            RtpMediaEngine.getInstance().stopAudio();
             dialogManager.setState(CallState.DISCONNECTED);
             dialogManager.reset();
+            System.out.println("Active call cleaned up following Dialog Termination.");
         } else {
-            System.out.println("Dialog Terminated ignored because call is still active in state: " + dialogManager.getState());
+            System.out.println("Ignored termination for an inactive / stale Dialog.");
         }
-        
     }
-    
 }

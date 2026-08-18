@@ -2,6 +2,7 @@ package com.sipclient.sip.listener;
 
 import java.util.Iterator;
 
+import javax.sip.Dialog;
 import javax.sip.DialogTerminatedEvent;
 import javax.sip.IOExceptionEvent;
 import javax.sip.RequestEvent;
@@ -75,9 +76,10 @@ public class SipListenerImpl implements SipListener {
     public void processResponse(ResponseEvent responseEvent) {
 
         Response response = responseEvent.getResponse();
+        Dialog responseDialog = responseEvent.getDialog();
 
-        if (responseEvent.getDialog() != null) {
-            dialogManager.getCurrentSession().setDialog(responseEvent.getDialog());
+        if (responseDialog != null) {
+            dialogManager.getCurrentSession().setDialog(responseDialog);
             System.out.println("Dialog Stored Successfully");
         }
 
@@ -139,6 +141,9 @@ public class SipListenerImpl implements SipListener {
                     break;
 
                 case Response.OK:
+                    if (dialogManager.getState() == CallState.IN_CALL) {
+                        System.out.println("Received duplicate 200 OK (Retransmission). Re-sending ACK...");
+                    }
                     break;
 
                 default:
@@ -189,10 +194,16 @@ public class SipListenerImpl implements SipListener {
     public void processDialogTerminated(DialogTerminatedEvent dialogTerminatedEvent) {
         System.out.println("Dialog Terminated Event Received");
 
-        // تنظيف محرك الصوت وإعادة ضبط الحالة دائماً عند انتهاء الـ Dialog من الشبكة
-        RtpMediaEngine.getInstance().stopAudio();
-        dialogManager.setState(CallState.DISCONNECTED);
-        dialogManager.reset();
-        System.out.println("Call cleaned up following Dialog Termination.");
+        Dialog terminatedDialog = dialogTerminatedEvent.getDialog();
+        Dialog activeDialog = dialogManager.getCurrentSession().getDialog();
+
+        if (activeDialog != null && activeDialog.equals(terminatedDialog)) {
+            RtpMediaEngine.getInstance().stopAudio();
+            dialogManager.setState(CallState.DISCONNECTED);
+            dialogManager.reset();
+            System.out.println("Active call cleaned up following Dialog Termination.");
+        } else {
+            System.out.println("Ignored termination for an inactive / stale Dialog.");
+        }
     }
 }

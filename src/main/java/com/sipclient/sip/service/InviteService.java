@@ -69,6 +69,9 @@ public class InviteService implements SipResponseHandler {
             String destination) {
 
         try {
+          
+            dialogManager.reset();
+
             currentAccount = account;
             currentDestination = destination;
 
@@ -104,7 +107,6 @@ public class InviteService implements SipResponseHandler {
 
     @Override
     public void handleResponse(Response response) {
-
         int statusCode = response.getStatusCode();
 
         switch (statusCode) {
@@ -157,37 +159,41 @@ public class InviteService implements SipResponseHandler {
                     break;
                 }
 
-                if (dialogManager.getState() == CallState.IN_CALL) {
-                    break;
-                }
-
-                Dialog dialog = dialogManager
-                        .getCurrentSession()
-                        .getDialog();
+                ClientTransaction clientTx = dialogManager.getCurrentSession().getClientTransaction();
+                Dialog dialog = (clientTx != null && clientTx.getDialog() != null) 
+                        ? clientTx.getDialog() 
+                        : dialogManager.getCurrentSession().getDialog();
 
                 if (dialog != null) {
                     try {
+                        dialogManager.getCurrentSession().setDialog(dialog);
+
                         javax.sip.header.CSeqHeader cseq =
                                 (javax.sip.header.CSeqHeader) response.getHeader(javax.sip.header.CSeqHeader.NAME);
 
                         Request ack = dialog.createAck(cseq.getSeqNumber());
                         dialog.sendAck(ack);
-
                         System.out.println("========== ACK SENT ==========");
 
-                        byte[] rawContent = response.getRawContent();
-                        if (rawContent != null && rawContent.length > 0) {
-                            String sdpBody = new String(rawContent);
-                            dialogManager.handleIncomingSdp(sdpBody);
-                        }
+                        if (dialogManager.getState() != CallState.IN_CALL) {
+                            byte[] rawContent = response.getRawContent();
+                            if (rawContent != null && rawContent.length > 0) {
+                                String sdpBody = new String(rawContent);
+                                dialogManager.handleIncomingSdp(sdpBody);
+                            }
 
-                        dialogManager.setState(CallState.IN_CALL);
-                        System.out.println("Call Connected Successfully");
+                            dialogManager.setState(CallState.IN_CALL);
+                            System.out.println("Call Connected Successfully");
+                        } else {
+                            System.out.println("Retransmitted ACK sent for ongoing call.");
+                        }
 
                     } catch (Exception e) {
                         System.err.println("Failed to process 200 OK / ACK: " + e.getMessage());
                         e.printStackTrace();
                     }
+                } else {
+                    System.err.println("CRITICAL ERROR: No Dialog associated with ClientTransaction!");
                 }
 
                 break;
@@ -227,6 +233,7 @@ public class InviteService implements SipResponseHandler {
             if (dialog == null) {
                 System.out.println("No active dialog to hangup.");
                 stopRingtone();
+                dialogManager.reset();
                 return;
             }
 
@@ -239,11 +246,12 @@ public class InviteService implements SipResponseHandler {
             System.out.println("==============================");
 
             stopRingtone(); 
-            dialogManager.setState(CallState.DISCONNECTED);
+            dialogManager.setState(CallState.TERMINATING);
 
         } catch (Exception e) {
             System.err.println("Failed to send BYE request:");
             e.printStackTrace();
+            dialogManager.reset();
         }
     }
 

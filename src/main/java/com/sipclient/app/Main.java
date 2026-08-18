@@ -15,7 +15,7 @@ public class Main extends Application {
         Parent root = FXMLLoader.load(
                 getClass().getResource("/fxml/MainView.fxml"));
 
-        Scene scene = new Scene(root, 600, 400);
+        Scene scene = new Scene(root, 800, 370);
 
         stage.setTitle("SIP Client");
 

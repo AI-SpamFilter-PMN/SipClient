@@ -29,7 +29,6 @@ public class AckRequestHandler {
         var currentSession = dialogManager.getCurrentSession();
         Dialog eventDialog = event.getDialog();
 
-        // 1. حالة المكالمات الواردة (Incoming Call)
         if (incomingSession != null) {
 
             if (eventDialog != null) {
@@ -40,7 +39,6 @@ public class AckRequestHandler {
             System.out.println("Incoming Call ACK Processed -> IN_CALL");
 
         } 
-        // 2. حالة المكالمات الصادرة / Re-INVITE ACK (Outgoing Call)
         else if (currentSession != null) {
 
             if (eventDialog != null) {
@@ -51,7 +49,7 @@ public class AckRequestHandler {
             System.out.println("Re-INVITE ACK Processed for Outgoing Call -> IN_CALL");
 
         } 
-        // 3. حالة وجود Dialog قائم بدون Session صريحة
+
         else if (eventDialog != null) {
 
             dialogManager.setState(CallState.IN_CALL);

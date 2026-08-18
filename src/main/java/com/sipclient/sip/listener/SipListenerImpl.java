@@ -189,7 +189,6 @@ public class SipListenerImpl implements SipListener {
     public void processDialogTerminated(DialogTerminatedEvent dialogTerminatedEvent) {
         System.out.println("Dialog Terminated Event Received");
 
-        // تنظيف محرك الصوت وإعادة ضبط الحالة دائماً عند انتهاء الـ Dialog من الشبكة
         RtpMediaEngine.getInstance().stopAudio();
         dialogManager.setState(CallState.DISCONNECTED);
         dialogManager.reset();

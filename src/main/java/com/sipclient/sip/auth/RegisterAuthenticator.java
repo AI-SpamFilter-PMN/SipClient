@@ -47,7 +47,6 @@ public class RegisterAuthenticator {
             String opaque = authHeader.getOpaque();
             String qop = authHeader.getQop();
 
-            // 💡 استخدام البورت ديناميكياً من الحساب أو افتراض 5066
             int targetPort = (account.getPort() > 0) ? account.getPort() : 5066;
             String uri = "sip:" + account.getDomain() + ":" + targetPort;
 
